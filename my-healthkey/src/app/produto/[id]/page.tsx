@@ -4,11 +4,21 @@ import { useParams, useRouter } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
+import dynamic from "next/dynamic";
 import { Button } from "@/components/ui/button";
 import { Header } from "@/./app/_components/header";
 import { Footer } from "@/./app/_components/footer";
 
-// ⬇️ DADOS MOCKADOS (depois você busca do backend)
+
+const MapaFarmacias = dynamic(() => import("@/./app/_components/MapaFarmacias"), {
+  ssr: false,
+  loading: () => (
+    <div className="bg-white rounded-xl shadow-lg p-6 md:p-10 text-center text-gray-400 mt-12">
+      Carregando mapa de farmácias…
+    </div>
+  ),
+});
+
 const produtosMock = [
   {
     id: 1,
@@ -166,6 +176,14 @@ export default function ProdutoPage() {
                 </div>
               </div>
             </div>
+          </div>
+
+          {/* ALTERAÇÃO 2: Mapa de farmácias — entre o produto e as avaliações */}
+          <div className="mt-12">
+            <MapaFarmacias
+              medicamentoId={produto.id.toString()}
+              nomeMedicamento={produto.nome}
+            />
           </div>
 
           {/* Avaliações */}
