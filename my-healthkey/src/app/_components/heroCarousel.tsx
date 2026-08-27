@@ -3,6 +3,7 @@
 import Image from "next/image";
 import useEmblaCarousel from "embla-carousel-react";
 import { useCallback, useEffect, useState } from "react";
+import { createClient } from "@/lib/supabase/client";
 
 interface ButtonProps {
   enabled: boolean;
@@ -69,39 +70,53 @@ function DotButton({ selected, onClick }: DotButtonProps) {
   );
 }
 
+// Cores rotativas para cada farmácia no carrossel
+const bgColors = ["#C62828", "#2E7D32", "#1565C0", "#E65100", "#6A1B9A", "#00838F"];
+
 export function HeroCarousel() {
   const [emblaRef, emblaApi] = useEmblaCarousel({ loop: true, duration: 30 });
   const [prevBtnEnabled, setPrevBtnEnabled] = useState(false);
   const [nextBtnEnabled, setNextBtnEnabled] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(0);
-  const [scrollSnaps, setScrollSnaps] = useState<number[]>([]); // ← CORRIGIDO
+  const [scrollSnaps, setScrollSnaps] = useState<number[]>([]);
 
-  const banners = [
-    {
-      id: 1,
-      title: "20% OFF",
-      description: "Em todos os pordutos da Loja A",
-      bgColor: "#C62828",
-    },
-    {
-      id: 2,
-      title: "Frete Grátis",
-      description: "Nas filiais da Loja B",
-      bgColor: "#2E7D32",
-    },
-    {
-      id: 3,
-      title: "Clube de Benefícios",
-      description: "Acumule pontos e troque por produtos",
-      bgColor: "#1565C0",
-    },
-    {
-      id: 4,
-      title: "Até 3x sem juros",
-      description: "No cartão de crédito na Loja C",
-      bgColor: "#E65100",
-    },
+  // Banners fallback (iguais ao original) enquanto carrega do banco
+  const fallbackBanners = [
+    { id: "fb1", title: "20% OFF", description: "Em todos os produtos da Loja A", bgColor: "#C62828" },
+    { id: "fb2", title: "Frete Grátis", description: "Nas filiais da Loja B", bgColor: "#2E7D32" },
+    { id: "fb3", title: "Clube de Benefícios", description: "Acumule pontos e troque por produtos", bgColor: "#1565C0" },
+    { id: "fb4", title: "Até 3x sem juros", description: "No cartão de crédito na Loja C", bgColor: "#E65100" },
   ];
+
+  const [banners, setBanners] = useState(fallbackBanners);
+
+  useEffect(() => {
+    async function fetchFarmacias() {
+      // Busca as farmácias e a quantidade de medicamentos que cada uma tem
+      const supabase = createClient();
+      const { data: pharmacies, error } = await supabase
+        .from("pharmacies")
+        .select(`
+          id,
+          name,
+          address,
+          pharmacy_medicines ( medicine_id )
+        `);
+
+      if (error || !pharmacies || pharmacies.length === 0) return;
+
+      const bannersFromDB = pharmacies.map((farm: any, idx: number) => ({
+        id: farm.id,
+        title: farm.name,
+        description: `${farm.pharmacy_medicines.length} medicamentos disponíveis · ${farm.address.split(",").slice(0, 2).join(",")}`,
+        bgColor: bgColors[idx % bgColors.length],
+      }));
+
+      setBanners(bannersFromDB);
+    }
+
+    fetchFarmacias();
+  }, []);
 
   const onSelect = useCallback(() => {
     if (!emblaApi) return;
@@ -116,6 +131,13 @@ export function HeroCarousel() {
     setScrollSnaps(emblaApi.scrollSnapList());
     emblaApi.on("select", onSelect);
   }, [emblaApi, onSelect]);
+
+  // Reinicia o embla quando os banners mudam (para recalcular os snaps)
+  useEffect(() => {
+    if (!emblaApi) return;
+    emblaApi.reInit();
+    setScrollSnaps(emblaApi.scrollSnapList());
+  }, [banners, emblaApi]);
 
   return (
     <div className="relative group mt-6">

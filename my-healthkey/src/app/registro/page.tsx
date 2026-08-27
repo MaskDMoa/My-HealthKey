@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { createClient } from "@/lib/supabase/client";
 
 export default function RegistroPage() {
   const router = useRouter();
@@ -12,28 +13,46 @@ export default function RegistroPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  const handleRegistro = (e: React.FormEvent) => {
+  const handleRegistro = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
+    setLoading(true);
 
     if (!name || !email || !password || !confirmPassword) {
-      setError("Preencha todos os campos");
+      setError("Preencha todos os campos obrigatórios");
+      setLoading(false);
       return;
     }
 
     if (password !== confirmPassword) {
       setError("As senhas não coincidem");
+      setLoading(false);
       return;
     }
 
     if (password.length < 6) {
       setError("A senha deve ter pelo menos 6 caracteres");
+      setLoading(false);
       return;
     }
 
-    console.log("Registro:", { name, email, password });
+    const supabase = createClient();
+    
+    // 1. Cadastra o usuário no Supabase Auth
+    const { data: authData, error: authError } = await supabase.auth.signUp({
+      email,
+      password,
+    });
+
+    if (authError || !authData.user) {
+      setError(authError?.message || "Erro ao criar conta");
+      setLoading(false);
+      return;
+    }
+
     router.push("/login");
   };
 
@@ -111,13 +130,14 @@ export default function RegistroPage() {
                 className="w-full"
               />
             </div>
-          </div>
+            </div>
 
           <Button
             type="submit"
             className="w-full bg-[#D32F2F] hover:bg-[#C62828] text-white py-2"
+            disabled={loading}
           >
-            Cadastrar
+            {loading ? "Aguarde..." : "Cadastrar Conta"}
           </Button>
 
           <p className="text-center text-sm text-gray-600">
@@ -126,6 +146,14 @@ export default function RegistroPage() {
               Faça login
             </Link>
           </p>
+
+          {/* Link para cadastro de farmácia */}
+          <div className="mt-6 border-t pt-6 text-center">
+            <p className="text-sm text-gray-600 mb-2">Você é proprietário de uma farmácia?</p>
+            <Link href="/registro-farmacia" className="text-[#D32F2F] font-bold hover:underline">
+              Cadastre sua Loja aqui
+            </Link>
+          </div>
         </form>
       </div>
     </div>

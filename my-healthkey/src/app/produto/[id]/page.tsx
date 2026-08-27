@@ -3,12 +3,12 @@
 import { useParams, useRouter } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import dynamic from "next/dynamic";
 import { Button } from "@/components/ui/button";
 import { Header } from "@/./app/_components/header";
 import { Footer } from "@/./app/_components/footer";
-
+import { createClient } from "@/lib/supabase/client";
 
 const MapaFarmacias = dynamic(() => import("@/./app/_components/MapaFarmacias"), {
   ssr: false,
@@ -19,45 +19,65 @@ const MapaFarmacias = dynamic(() => import("@/./app/_components/MapaFarmacias"),
   ),
 });
 
-const produtosMock = [
-  {
-    id: 1,
-    nome: "Paracetamol 500mg",
-    preco: 12.90,
-    descricao: "Analgésico e antitérmico indicado para dor e febre.",
-    imagem: "/Paracetamol.png",
-    categoria: "Analgésicos",
-    estoque: 50,
-    avaliacao: 4.5,
-  },
-  {
-    id: 2,
-    nome: "Ibuprofeno 400mg",
-    preco: 18.50,
-    descricao: "Anti-inflamatório não esteroidal, alivia dores e inflamações.",
-    imagem: "/Paracetamol.png",
-    categoria: "Anti-inflamatórios",
-    estoque: 30,
-    avaliacao: 4.8,
-  },
-  {
-    id: 3,
-    nome: "Dipirona 500mg",
-    preco: 8.90,
-    descricao: "Analgésico e antitérmico de ação rápida.",
-    imagem: "/Paracetamol.png",
-    categoria: "Analgésicos",
-    estoque: 100,
-    avaliacao: 4.2,
-  },
-];
-
 export default function ProdutoPage() {
   const params = useParams<{ id: string }>();
   const router = useRouter();
   const [quantidade, setQuantidade] = useState(1);
+  const [produto, setProduto] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
 
-  const produto = produtosMock.find((p) => p.id === Number(params.id));
+  useEffect(() => {
+    async function fetchProduto() {
+      // 1. Busca os detalhes do medicamento e os preços cadastrados
+      const supabase = createClient();
+      const { data, error } = await supabase
+        .from("medicines")
+        .select(`
+          id,
+          name,
+          active_ingredient,
+          description,
+          image_url,
+          pharmacy_medicines ( price )
+        `)
+        .eq("id", params.id)
+        .single();
+
+      if (error || !data) {
+        setLoading(false);
+        return;
+      }
+
+      // Calcula o menor preço disponível
+      const precos = data.pharmacy_medicines.map((pm: any) => pm.price);
+      const menorPreco = precos.length > 0 ? Math.min(...precos) : 0;
+
+      setProduto({
+        id: data.id,
+        nome: data.name,
+        descricao: data.description || "Descrição não disponível no momento.",
+        imagem: data.image_url || "/Paracetamol.png",
+        categoria: data.active_ingredient || "Medicamentos",
+        preco: menorPreco,
+        estoque: 100, // TODO: somar estoque real quando o BD suportar qtd
+        avaliacao: 4.8 // Fixo por enquanto
+      });
+      setLoading(false);
+    }
+    fetchProduto();
+  }, [params.id]);
+
+  if (loading) {
+    return (
+      <>
+        <Header />
+        <div className="min-h-[60vh] flex items-center justify-center bg-[#F8F9FA]">
+          <span className="text-gray-500 text-lg">Carregando produto...</span>
+        </div>
+        <Footer />
+      </>
+    );
+  }
 
   if (!produto) {
     return (

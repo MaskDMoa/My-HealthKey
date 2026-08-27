@@ -5,28 +5,41 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { createClient } from "@/lib/supabase/client";
 
 export default function LoginPage() {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
+    setLoading(true);
 
-    // Validação simples
     if (!email || !password) {
       setError("Preencha todos os campos");
+      setLoading(false);
       return;
     }
 
-    // Aqui depois conectar com backend
-    console.log("Login:", { email, password });
+    const supabase = createClient();
+    const { error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+
+    setLoading(false);
+
+    if (error) {
+      setError(error.message);
+      return;
+    }
     
-    // Por enquanto, só redireciona
     router.push("/");
+    router.refresh();
   };
 
   return (
@@ -93,8 +106,9 @@ export default function LoginPage() {
           <Button
             type="submit"
             className="w-full bg-[#D32F2F] hover:bg-[#C62828] text-white py-2"
+            disabled={loading}
           >
-            Entrar
+            {loading ? "Aguarde..." : "Entrar"}
           </Button>
 
           <p className="text-center text-sm text-gray-600">
