@@ -1,19 +1,22 @@
 "use client";
 
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { createClient } from "@/lib/supabase/client";
-import { useState, useEffect, useRef } from "react";
+import { MagnifyingGlassIcon } from "@phosphor-icons/react";
 
 export function Header() {
   const router = useRouter();
   const supabase = createClient();
+
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [menuOpen, setMenuOpen] = useState(false);
   const [cartCount, setCartCount] = useState(0);
+  const [termo, setTermo] = useState("");
   const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -31,14 +34,16 @@ export function Header() {
     });
 
     // Escuta mudanças no estado de autenticação
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ?? null);
     });
 
     return () => subscription.unsubscribe();
   }, []);
 
-  // Fecha o menu ao clicar fora
+  // Fecha o menu de perfil ao clicar fora
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
       if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
@@ -61,6 +66,17 @@ export function Header() {
     setMenuOpen(false);
     router.push("/");
     router.refresh();
+  };
+
+  const handleBuscar = () => {
+    const q = termo.trim();
+    router.push(q ? `/busca?q=${encodeURIComponent(q)}` : "/busca");
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") {
+      handleBuscar();
+    }
   };
 
   return (
@@ -88,11 +104,7 @@ export function Header() {
           cursor: "pointer",
         }}
       >
-        <img
-          src="/Logo.png"
-          alt="Logo"
-          style={{ height: "80px", width: "auto" }}
-        />
+        <img src="/Logo.png" alt="Logo" style={{ height: "80px", width: "auto" }} />
         <h1
           style={{
             margin: 0,
@@ -112,27 +124,49 @@ export function Header() {
         </h1>
       </div>
 
-      <div
-        style={{
-          flex: 1,
-          display: "flex",
-          justifyContent: "center",
-        }}
-      >
-        <Input
-          type="text"
-          placeholder="Pesquisar medicamentos..."
+      {/* Barra de busca */}
+      <div style={{ flex: 1, display: "flex", justifyContent: "center" }}>
+        <div
           style={{
             width: "700px",
-            borderColor: "#D32F2F",
-            outline: "none",
+            display: "flex",
+            alignItems: "center",
+            border: "1px solid #D32F2F",
+            borderRadius: "6px",
+            overflow: "hidden",
+            backgroundColor: "#fff",
           }}
-        />
+        >
+          <Input
+            type="text"
+            value={termo}
+            onChange={(e) => setTermo(e.target.value)}
+            onKeyDown={handleKeyDown}
+            placeholder="Pesquisar medicamentos..."
+            className="border-0 shadow-none focus-visible:ring-0"
+            style={{ outline: "none" }}
+          />
+          <button
+            onClick={handleBuscar}
+            aria-label="Pesquisar"
+            style={{
+              backgroundColor: "#D32F2F",
+              height: "100%",
+              padding: "0 16px",
+              display: "flex",
+              alignItems: "center",
+              cursor: "pointer",
+            }}
+          >
+            <MagnifyingGlassIcon size={20} color="#fff" />
+          </button>
+        </div>
       </div>
 
+      {/* Área direita: auth + carrinho */}
       <div style={{ display: "flex", gap: "12px", marginLeft: "auto", alignItems: "center" }}>
         {loading ? (
-          // Espaço reservado enquanto carrega para não causar layout shift
+          // Espaço reservado enquanto carrega, evita layout shift
           <div style={{ width: "180px" }} />
         ) : user ? (
           // ====== USUÁRIO LOGADO ======
@@ -149,10 +183,19 @@ export function Header() {
                 }}
                 title="Carrinho"
               >
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#D32F2F" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <circle cx="9" cy="21" r="1"/>
-                  <circle cx="20" cy="21" r="1"/>
-                  <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
+                <svg
+                  width="24"
+                  height="24"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="#D32F2F"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <circle cx="9" cy="21" r="1" />
+                  <circle cx="20" cy="21" r="1" />
+                  <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6" />
                 </svg>
                 {cartCount > 0 && (
                   <span
@@ -219,12 +262,23 @@ export function Header() {
                 >
                   <div style={{ padding: "12px 16px", borderBottom: "1px solid #eee" }}>
                     <p style={{ margin: 0, fontSize: "13px", color: "#999" }}>Logado como</p>
-                    <p style={{ margin: 0, fontSize: "14px", fontWeight: 600, color: "#333", wordBreak: "break-all" }}>
+                    <p
+                      style={{
+                        margin: 0,
+                        fontSize: "14px",
+                        fontWeight: 600,
+                        color: "#333",
+                        wordBreak: "break-all",
+                      }}
+                    >
                       {user.email}
                     </p>
                   </div>
                   <button
-                    onClick={() => { setMenuOpen(false); /* TODO: mudar email */ }}
+                    onClick={() => {
+                      setMenuOpen(false);
+                      /* TODO: mudar email */
+                    }}
                     style={{
                       display: "flex",
                       alignItems: "center",
@@ -241,11 +295,17 @@ export function Header() {
                     onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#f5f5f5")}
                     onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "transparent")}
                   >
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
+                      <polyline points="22,6 12,13 2,6" />
+                    </svg>
                     Mudar Email
                   </button>
                   <button
-                    onClick={() => { setMenuOpen(false); /* TODO: mudar senha */ }}
+                    onClick={() => {
+                      setMenuOpen(false);
+                      /* TODO: mudar senha */
+                    }}
                     style={{
                       display: "flex",
                       alignItems: "center",
@@ -262,7 +322,10 @@ export function Header() {
                     onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#f5f5f5")}
                     onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "transparent")}
                   >
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                      <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                    </svg>
                     Mudar Senha
                   </button>
                   <div style={{ borderTop: "1px solid #eee" }}>
@@ -285,7 +348,11 @@ export function Header() {
                       onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#fff5f5")}
                       onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "transparent")}
                     >
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                        <polyline points="16 17 21 12 16 7" />
+                        <line x1="21" y1="12" x2="9" y2="12" />
+                      </svg>
                       Sair
                     </button>
                   </div>
