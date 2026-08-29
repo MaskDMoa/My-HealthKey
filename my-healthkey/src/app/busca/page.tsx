@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { Suspense, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
@@ -32,7 +32,7 @@ const categorias = ["Todos", ...Array.from(new Set(produtos.map((p) => p.categor
 
 type Ordenacao = "relevancia" | "menor-preco" | "maior-preco" | "nome";
 
-export default function BuscaPage() {
+function BuscaContent() {
   const searchParams = useSearchParams();
 
   const [termo, setTermo] = useState(searchParams.get("q") ?? "");
@@ -186,5 +186,13 @@ export default function BuscaPage() {
         )}
       </section>
     </main>
+  );
+}
+
+export default function BuscaPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center">Carregando...</div>}>
+      <BuscaContent />
+    </Suspense>
   );
 }
