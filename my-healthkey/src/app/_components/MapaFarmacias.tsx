@@ -3,7 +3,7 @@ import { useState, useEffect, useRef } from "react";
 import { MapContainer, TileLayer, Marker, Popup, useMap } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
-import { getFarmaciasComPreco } from "./mockFarmacias";
+import { createClient } from "@/lib/supabase/client";
 
 interface Farmacia {
   id: string;
@@ -113,10 +113,36 @@ export default function MapaFarmacias({ medicamentoId, nomeMedicamento }: MapaFa
     async function fetchFarmacias() {
       setStatus("loading");
       try {
-        // ==== MODO DEMONSTRAÇÃO — substituir por chamada real depois ====
-        await new Promise((r) => setTimeout(r, 400)); // simula tempo de rede
-        const data: Farmacia[] = getFarmaciasComPreco(medicamentoId);
-        // ===================================================================
+        const supabase = createClient();
+        // Busca no Supabase as farmácias que têm esse medicamento
+        const { data: rawData, error } = await supabase
+          .from("pharmacy_medicines")
+          .select(`
+            price,
+            pharmacies (
+              id,
+              name,
+              address,
+              latitude,
+              longitude
+            )
+          `)
+          .eq("medicine_id", medicamentoId)
+          .eq("is_available", true);
+
+        if (error) {
+          console.error("Erro ao buscar no Supabase:", error);
+          throw error;
+        }
+
+        const data: Farmacia[] = (rawData || []).map((row: any) => ({
+          id: row.pharmacies.id,
+          nome: row.pharmacies.name,
+          endereco: row.pharmacies.address,
+          lat: row.pharmacies.latitude,
+          lon: row.pharmacies.longitude,
+          preco: Number(row.price),
+        }));
 
         const comDistancia: FarmaciaComDistancia[] = data.map((f) => ({
           ...f,
