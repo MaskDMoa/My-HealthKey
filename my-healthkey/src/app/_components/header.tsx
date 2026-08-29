@@ -1,17 +1,31 @@
 "use client";
 
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { MagnifyingGlassIcon } from "@phosphor-icons/react";
 
 export function Header() {
   const router = useRouter();
+  const [termo, setTermo] = useState("");
 
   const handleLogoClick = (e: React.MouseEvent<HTMLDivElement>) => {
     e.preventDefault();
     window.scrollTo({ top: 0, behavior: "smooth" });
     router.push("/");
+  };
+
+  const handleBuscar = () => {
+    const q = termo.trim();
+    router.push(q ? `/busca?q=${encodeURIComponent(q)}` : "/busca");
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") {
+      handleBuscar();
+    }
   };
 
   return (
@@ -70,19 +84,44 @@ export function Header() {
           justifyContent: "center",
         }}
       >
-        <Input
-          type="text"
-          placeholder="Pesquisar medicamentos..."
+        <div
           style={{
             width: "700px",
-            borderColor: "#D32F2F",
-            outline: "none",
+            display: "flex",
+            alignItems: "center",
+            border: "1px solid #D32F2F",
+            borderRadius: "6px",
+            overflow: "hidden",
+            backgroundColor: "#fff",
           }}
-        />
+        >
+          <Input
+            type="text"
+            value={termo}
+            onChange={(e) => setTermo(e.target.value)}
+            onKeyDown={handleKeyDown}
+            placeholder="Pesquisar medicamentos..."
+            className="border-0 shadow-none focus-visible:ring-0"
+            style={{ outline: "none" }}
+          />
+          <button
+            onClick={handleBuscar}
+            aria-label="Pesquisar"
+            style={{
+              backgroundColor: "#D32F2F",
+              height: "100%",
+              padding: "0 16px",
+              display: "flex",
+              alignItems: "center",
+              cursor: "pointer",
+            }}
+          >
+            <MagnifyingGlassIcon size={20} color="#fff" />
+          </button>
+        </div>
       </div>
 
       <div style={{ display: "flex", gap: "12px", marginLeft: "auto" }}>
-        
         <Link href="/login">
           <Button
             variant="outline"
