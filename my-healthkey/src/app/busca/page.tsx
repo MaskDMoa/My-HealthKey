@@ -154,6 +154,15 @@ function BuscaContent() {
 
   const isLoading = tipoBusca === "medicamentos" ? carregandoRemedios : carregandoFarmacias;
 
+  // Sincroniza com o query param da URL (quando o Header redireciona pra /busca?q=...)
+  useEffect(() => {
+    const q = searchParams.get("q") ?? "";
+    if (q !== termoSubmit) {
+      setTermo(q);
+      setTermoSubmit(q);
+    }
+  }, [searchParams]);
+
   return (
     <main style={{ backgroundColor: "#F8F9FA" }} className="min-h-screen">
       {/* Header global com barra de pesquisa */}
@@ -161,9 +170,9 @@ function BuscaContent() {
 
       {/* Cabeçalho da busca */}
       <section style={{ backgroundColor: "#C62828" }} className="text-white pb-6 relative shadow-inner">
-        <div className="container mx-auto px-6 pt-10 pb-10 max-w-6xl">
+        <div className="container mx-auto px-6 pt-8 pb-6 max-w-6xl">
           
-          <div className="flex gap-4 mb-8">
+          <div className="flex gap-4 mb-6">
             <button
               onClick={() => setTipoBusca("medicamentos")}
               className={`flex items-center gap-2 px-5 py-2.5 rounded-full font-medium transition-all ${
@@ -184,43 +193,13 @@ function BuscaContent() {
             </button>
           </div>
 
-          <h1 className="text-3xl font-bold mb-6">
+          <h1 className="text-3xl font-bold">
             {termoSubmit ? (
               <>Resultados para &quot;{termoSubmit}&quot;</>
             ) : (
               <>{tipoBusca === "medicamentos" ? "Encontre o menor preço" : "Encontre farmácias próximas"}</>
             )}
           </h1>
-
-          <div className="flex items-center bg-white rounded-lg overflow-hidden shadow-lg max-w-2xl focus-within:ring-4 focus-within:ring-red-400/50 transition-all relative">
-            <MagnifyingGlass size={22} className="text-gray-400 ml-4" />
-            <Input
-              type="text"
-              value={termo}
-              onChange={(e) => setTermo(e.target.value)}
-              onKeyDown={handleKeyDown}
-              placeholder={tipoBusca === "medicamentos" ? "Ex: Paracetamol, Dipirona..." : "Ex: Drogaria, Ultra Popular..."}
-              className="border-0 shadow-none focus-visible:ring-0 text-gray-800 h-14 text-lg pr-12"
-            />
-            {termo && (
-              <button
-                onClick={() => {
-                  setTermo("");
-                  setTermoSubmit("");
-                }}
-                className="absolute right-24 text-gray-400 hover:text-red-500 transition-colors"
-                title="Limpar busca"
-              >
-                <XCircle size={24} weight="fill" />
-              </button>
-            )}
-            <button 
-              onClick={() => setTermoSubmit(termo)}
-              className="bg-red-700 hover:bg-red-800 text-white px-6 h-14 font-semibold transition-colors"
-            >
-              Buscar
-            </button>
-          </div>
         </div>
       </section>
 
