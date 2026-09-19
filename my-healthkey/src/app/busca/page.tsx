@@ -11,11 +11,13 @@ import { createClient } from "@/lib/supabase/client";
 type Ordenacao = "relevancia" | "menor-preco" | "maior-preco" | "nome";
 type TipoBusca = "medicamentos" | "farmacias";
 
-interface MedicineResult {
-  id: string;
+interface OfferResult {
+  id: string; // pharmacy_medicines.id
+  medicine_id: string;
   name: string;
   active_ingredient: string;
-  minPrice: number | null;
+  pharmacy_name: string;
+  price: number;
 }
 
 function BuscaContent() {
@@ -28,7 +30,7 @@ function BuscaContent() {
   
   const [ordenacao, setOrdenacao] = useState<Ordenacao>("relevancia");
 
-  const [remedios, setRemedios] = useState<MedicineResult[]>([]);
+  const [remedios, setRemedios] = useState<OfferResult[]>([]);
   const [carregandoRemedios, setCarregandoRemedios] = useState(false);
 
   const [farmacias, setFarmacias] = useState<any[]>([]);
@@ -73,51 +75,49 @@ function BuscaContent() {
           supabase.from("search_logs").insert({ term: termoSubmit }).then(() => {});
         }
 
-        // Buscar medicamentos do banco
-        let query = supabase
-          .from("medicines")
-          .select("id, name, active_ingredient");
-        
-        if (termoSubmit) {
-          query = query.ilike("name", `%${termoSubmit}%`);
-        }
+        // Buscar medicamentos do banco (limitando os IDs primeiro)
+        let medQuery = supabase.from("medicines").select("id").limit(50);
+        if (termoSubmit) medQuery = medQuery.ilike("name", `%${termoSubmit}%`);
+        const { data: medData } = await medQuery;
 
-        const { data: medicinesData } = await query.limit(50);
-
-        if (medicinesData && medicinesData.length > 0) {
-          // Para cada medicamento, buscar o menor preço disponível
-          const medIds = medicinesData.map(m => m.id);
-          const { data: pricesData } = await supabase
+        if (medData && medData.length > 0) {
+          const medIds = medData.map(m => m.id);
+          
+          const { data: offersData } = await supabase
             .from("pharmacy_medicines")
-            .select("medicine_id, price")
+            .select(`
+              id, price, medicine_id,
+              medicines (name, active_ingredient),
+              pharmacies (name)
+            `)
             .in("medicine_id", medIds)
             .eq("is_available", true);
 
-          // Calcular menor preço por medicamento
-          const minPriceMap: Record<string, number> = {};
-          (pricesData || []).forEach((p: any) => {
-            if (!minPriceMap[p.medicine_id] || p.price < minPriceMap[p.medicine_id]) {
-              minPriceMap[p.medicine_id] = p.price;
-            }
-          });
-
-          let results: MedicineResult[] = medicinesData.map((m: any) => ({
-            id: m.id,
-            name: m.name,
-            active_ingredient: m.active_ingredient || "",
-            minPrice: minPriceMap[m.id] ?? null,
+          let results: OfferResult[] = (offersData || []).map((o: any) => ({
+            id: o.id,
+            medicine_id: o.medicine_id,
+            name: o.medicines?.name || "",
+            active_ingredient: o.medicines?.active_ingredient || "",
+            pharmacy_name: o.pharmacies?.name || "",
+            price: Number(o.price)
           }));
 
           // Ordenar
           switch (ordenacao) {
             case "menor-preco":
-              results.sort((a, b) => (a.minPrice ?? 999999) - (b.minPrice ?? 999999));
+              results.sort((a, b) => a.price - b.price);
               break;
             case "maior-preco":
-              results.sort((a, b) => (b.minPrice ?? 0) - (a.minPrice ?? 0));
+              results.sort((a, b) => b.price - a.price);
               break;
             case "nome":
               results.sort((a, b) => a.name.localeCompare(b.name));
+              break;
+            case "relevancia":
+              results.sort((a, b) => {
+                const porNome = a.name.localeCompare(b.name);
+                return porNome !== 0 ? porNome : a.price - b.price;
+              });
               break;
           }
 
@@ -312,7 +312,7 @@ function BuscaContent() {
               <>
                 <p className="text-sm text-gray-500 mb-4">
                   {remedios.length}{" "}
-                  {remedios.length === 1 ? "medicamento encontrado" : "medicamentos encontrados"}
+                  {remedios.length === 1 ? "oferta encontrada" : "ofertas encontradas"}
                 </p>
 
                 {remedios.length === 0 ? (
@@ -336,7 +336,7 @@ function BuscaContent() {
                 ) : (
                   <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
                     {remedios.map((med) => (
-                      <Link key={med.id} href={`/produto/${med.id}`}>
+                      <Link key={med.id} href={`/produto/${med.medicine_id}`}>
                         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 hover:shadow-xl transition-all duration-300 cursor-pointer p-5 hover:scale-[1.03] h-full flex flex-col group">
                           <div className="w-12 h-12 bg-red-50 rounded-xl flex items-center justify-center mb-4 group-hover:bg-red-100 transition-colors">
                             <Pill size={24} className="text-red-500" weight="fill" />
@@ -347,12 +347,20 @@ function BuscaContent() {
                           {med.active_ingredient && (
                             <p className="text-xs text-gray-400 mt-1">{med.active_ingredient}</p>
                           )}
+                          
+                          <div className="flex items-center gap-1.5 mt-3 bg-red-50 rounded-full px-3 py-1.5 w-fit">
+                            <Storefront size={14} className="text-[#D32F2F]" />
+                            <span className="text-xs font-semibold text-[#D32F2F] truncate max-w-[150px]">
+                              {med.pharmacy_name}
+                            </span>
+                          </div>
+
                           <div className="mt-3 pt-3 border-t border-gray-50">
-                            {med.minPrice !== null ? (
+                            {med.price !== null ? (
                               <>
-                                <span className="text-xs text-gray-400 block">a partir de</span>
+                                <span className="text-xs text-gray-400 block">preço</span>
                                 <p className="text-[#D32F2F] font-bold text-xl">
-                                  R$ {med.minPrice.toFixed(2)}
+                                  R$ {med.price.toFixed(2)}
                                 </p>
                               </>
                             ) : (
