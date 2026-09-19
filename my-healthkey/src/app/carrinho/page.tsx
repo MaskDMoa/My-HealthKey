@@ -126,8 +126,13 @@ export default function CarrinhoPage() {
             <div className="space-y-8">
               {Object.entries(groupedItems).map(([pharmacyId, group]: [string, any]) => (
                 <div key={pharmacyId} className="bg-white rounded-xl shadow overflow-hidden">
-                  <div className="bg-gray-50 px-6 py-4 border-b">
-                    <h2 className="text-xl font-bold text-gray-800">🏪 {group.pharmacyName}</h2>
+                  <div className="bg-gray-50 px-6 py-4 border-b flex items-center gap-2">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#D32F2F" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M3 9h18v2H3z"/>
+                      <path d="M4 11v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/>
+                      <path d="M3 9l2-4h14l2 4"/>
+                    </svg>
+                    <h2 className="text-xl font-bold text-gray-800">{group.pharmacyName}</h2>
                   </div>
                   <div className="divide-y">
                     {group.items.map((item: any) => (

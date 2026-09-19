@@ -25,11 +25,29 @@ export default function ProdutoPage() {
   const [quantidade, setQuantidade] = useState(1);
   const [produto, setProduto] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [farmaciaSelecionada, setFarmaciaSelecionada] = useState<any>(null);
+
+  // Estados para Reviews
+  const [reviews, setReviews] = useState<any[]>([]);
+  const [user, setUser] = useState<any>(null);
+  const [isPharmacy, setIsPharmacy] = useState(false);
+  const [novaNota, setNovaNota] = useState(5);
+  const [novoComentario, setNovoComentario] = useState("");
+  const [enviandoReview, setEnviandoReview] = useState(false);
 
   useEffect(() => {
-    async function fetchProduto() {
-      // 1. Busca os detalhes do medicamento e os preços cadastrados
+    async function fetchProdutoEReviews() {
       const supabase = createClient();
+      
+      // Checa usuário logado
+      const { data: { user: currentUser } } = await supabase.auth.getUser();
+      if (currentUser) {
+        setUser(currentUser);
+        const { data: pharm } = await supabase.from("pharmacies").select("id").eq("owner_id", currentUser.id).single();
+        setIsPharmacy(!!pharm);
+      }
+
+      // 1. Busca os detalhes do medicamento
       const { data, error } = await supabase
         .from("medicines")
         .select(`
@@ -52,6 +70,22 @@ export default function ProdutoPage() {
       const precos = data.pharmacy_medicines.map((pm: any) => pm.price);
       const menorPreco = precos.length > 0 ? Math.min(...precos) : 0;
 
+      // 2. Busca as avaliações
+      const { data: reviewsData } = await supabase
+        .from("reviews")
+        .select("*")
+        .eq("medicine_id", data.id)
+        .order("created_at", { ascending: false });
+
+      // Calcula a média das notas
+      const calcAvg = () => {
+        if (!reviewsData || reviewsData.length === 0) return 5.0;
+        const sum = reviewsData.reduce((acc, curr) => acc + curr.rating, 0);
+        return (sum / reviewsData.length).toFixed(1);
+      };
+
+      setReviews(reviewsData || []);
+
       setProduto({
         id: data.id,
         nome: data.name,
@@ -60,12 +94,41 @@ export default function ProdutoPage() {
         categoria: data.active_ingredient || "Medicamentos",
         preco: menorPreco,
         estoque: 100, // TODO: somar estoque real quando o BD suportar qtd
-        avaliacao: 4.8 // Fixo por enquanto
+        avaliacao: calcAvg(),
+        totalAvaliacoes: reviewsData?.length || 0
       });
       setLoading(false);
     }
-    fetchProduto();
+    fetchProdutoEReviews();
   }, [params.id]);
+
+  const handleSubmitReview = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!user || isPharmacy) return;
+    
+    setEnviandoReview(true);
+    const supabase = createClient();
+    
+    const userName = user.user_metadata?.full_name || user.email?.split("@")[0] || "Usuário";
+
+    const { data, error } = await supabase.from("reviews").insert({
+      user_id: user.id,
+      user_name: userName,
+      medicine_id: produto.id,
+      rating: novaNota,
+      comment: novoComentario
+    }).select().single();
+
+    if (error) {
+      alert("Erro ao enviar avaliação. Tente novamente.");
+    } else if (data) {
+      setReviews([data, ...reviews]);
+      setNovoComentario("");
+      setNovaNota(5);
+      alert("Avaliação enviada com sucesso!");
+    }
+    setEnviandoReview(false);
+  };
 
   if (loading) {
     return (
@@ -96,8 +159,36 @@ export default function ProdutoPage() {
     );
   }
 
-  const handleAddToCart = () => {
-    alert(`Adicionado ${quantidade}x ${produto.nome} ao carrinho!`);
+  const handleAddToCart = async () => {
+    if (!farmaciaSelecionada) {
+      alert("Por favor, selecione uma farmácia no mapa abaixo antes de adicionar ao carrinho.");
+      return;
+    }
+
+    const supabase = createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+
+    if (!user) {
+      alert("Você precisa fazer login para adicionar ao carrinho!");
+      router.push("/login");
+      return;
+    }
+
+    // Insere no banco (tabela cart_items)
+    const { error } = await supabase.from("cart_items").insert({
+      user_id: user.id,
+      pharmacy_id: farmaciaSelecionada.id,
+      medicine_id: produto.id,
+      quantity: quantidade
+    });
+
+    if (error) {
+      alert("Erro ao adicionar ao carrinho: " + error.message);
+    } else {
+      alert(`Adicionado ${quantidade}x ${produto.nome} (Vendido por ${farmaciaSelecionada.nome}) ao carrinho!`);
+      // Atualiza a página para o Header mostrar o novo número do carrinho
+      router.refresh();
+    }
   };
 
   return (
@@ -145,12 +236,18 @@ export default function ProdutoPage() {
                   <div className="flex items-center gap-2 mt-2">
                     <span className="text-yellow-500 text-xl">⭐</span>
                     <span className="font-semibold">{produto.avaliacao}</span>
-                    <span className="text-gray-400">(120 avaliações)</span>
+                    <span className="text-gray-400">({produto.totalAvaliacoes} avaliações)</span>
                   </div>
 
                   <p className="text-4xl font-bold text-[#D32F2F] mt-4">
-                    R$ {produto.preco.toFixed(2)}
+                    R$ {farmaciaSelecionada ? farmaciaSelecionada.preco.toFixed(2) : produto.preco.toFixed(2)}
                   </p>
+                  
+                  {farmaciaSelecionada && (
+                    <p className="text-sm text-gray-500 mt-1">
+                      Vendido por: <strong>{farmaciaSelecionada.nome}</strong>
+                    </p>
+                  )}
 
                   <p className="text-gray-600 mt-4 leading-relaxed">
                     {produto.descricao}
@@ -198,39 +295,89 @@ export default function ProdutoPage() {
             </div>
           </div>
 
-          {/* ALTERAÇÃO 2: Mapa de farmácias — entre o produto e as avaliações */}
           <div className="mt-12">
             <MapaFarmacias
               medicamentoId={produto.id.toString()}
               nomeMedicamento={produto.nome}
+              onSelectPharmacy={(f) => setFarmaciaSelecionada(f)}
             />
           </div>
 
           {/* Avaliações */}
           <div className="mt-12 bg-white rounded-xl shadow-lg p-6 md:p-10">
             <h2 className="text-2xl font-bold text-gray-800 mb-6">Avaliações</h2>
-            <div className="space-y-4">
-              <div className="border-b pb-4">
-                <div className="flex items-center gap-2">
-                  <span className="font-semibold">João S.</span>
-                  <span className="text-yellow-500">⭐⭐⭐⭐⭐</span>
+            
+            {/* Formulário de Nova Avaliação */}
+            {user ? (
+              isPharmacy ? (
+                <div className="bg-orange-50 text-orange-800 p-4 rounded-lg mb-8">
+                  Apenas contas de clientes podem avaliar medicamentos.
                 </div>
-                <p className="text-gray-600 mt-1">Ótimo produto, aliviou minha dor rapidamente!</p>
+              ) : (
+                <form onSubmit={handleSubmitReview} className="mb-8 p-6 border rounded-xl bg-gray-50">
+                  <h3 className="font-semibold text-lg mb-4">Deixe sua avaliação</h3>
+                  <div className="flex gap-2 mb-4">
+                    {[1, 2, 3, 4, 5].map((star) => (
+                      <button
+                        key={star}
+                        type="button"
+                        onClick={() => setNovaNota(star)}
+                        className={`text-2xl ${star <= novaNota ? 'text-yellow-500' : 'text-gray-300'}`}
+                      >
+                        ★
+                      </button>
+                    ))}
+                  </div>
+                  <textarea
+                    value={novoComentario}
+                    onChange={(e) => setNovoComentario(e.target.value)}
+                    placeholder="Escreva seu comentário..."
+                    className="w-full p-3 border rounded-lg resize-none h-24 mb-4 outline-none focus:ring-2 focus:ring-red-500/50"
+                    required
+                  />
+                  <Button
+                    type="submit"
+                    disabled={enviandoReview}
+                    className="bg-[#D32F2F] hover:bg-[#C62828] text-white"
+                  >
+                    {enviandoReview ? "Enviando..." : "Enviar Avaliação"}
+                  </Button>
+                </form>
+              )
+            ) : (
+              <div className="bg-gray-50 text-gray-600 p-4 rounded-lg mb-8 flex justify-between items-center">
+                <span>Faça login para deixar uma avaliação.</span>
+                <Link href="/login" className="text-[#D32F2F] font-semibold hover:underline">
+                  Fazer Login
+                </Link>
               </div>
-              <div className="border-b pb-4">
-                <div className="flex items-center gap-2">
-                  <span className="font-semibold">Maria F.</span>
-                  <span className="text-yellow-500">⭐⭐⭐⭐</span>
-                </div>
-                <p className="text-gray-600 mt-1">Bom custo-benefício, entrega rápida.</p>
-              </div>
-              <div>
-                <div className="flex items-center gap-2">
-                  <span className="font-semibold">Pedro R.</span>
-                  <span className="text-yellow-500">⭐⭐⭐⭐⭐</span>
-                </div>
-                <p className="text-gray-600 mt-1">Recomendo! Já compro sempre aqui.</p>
-              </div>
+            )}
+
+            {/* Lista de Avaliações */}
+            <div className="space-y-6">
+              {reviews.length === 0 ? (
+                <p className="text-gray-500 text-center py-4">Nenhuma avaliação ainda. Seja o primeiro!</p>
+              ) : (
+                reviews.map((rev) => (
+                  <div key={rev.id} className="border-b pb-6 last:border-b-0 last:pb-0">
+                    <div className="flex items-center gap-2 mb-2">
+                      <div className="w-10 h-10 bg-red-100 text-red-600 rounded-full flex items-center justify-center font-bold text-lg">
+                        {rev.user_name.charAt(0).toUpperCase()}
+                      </div>
+                      <div>
+                        <span className="font-semibold block">{rev.user_name}</span>
+                        <span className="text-yellow-500 text-sm">
+                          {"★".repeat(rev.rating)}{"☆".repeat(5 - rev.rating)}
+                        </span>
+                      </div>
+                    </div>
+                    <p className="text-gray-700 ml-12">{rev.comment}</p>
+                    <span className="text-xs text-gray-400 ml-12 mt-2 block">
+                      {new Date(rev.created_at).toLocaleDateString("pt-BR")}
+                    </span>
+                  </div>
+                ))
+              )}
             </div>
           </div>
         </div>

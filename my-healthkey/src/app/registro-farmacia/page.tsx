@@ -17,8 +17,7 @@ export default function RegistroFarmaciaPage() {
   
   // Dados da Farmácia
   const [cnpj, setCnpj] = useState("");
-  const [name, setName] = useState(""); // Razão Social / Nome
-  const [tradeName, setTradeName] = useState(""); // Nome Fantasia
+  const [name, setName] = useState(""); // Nome da Farmácia
   const [phone, setPhone] = useState("");
   const [address, setAddress] = useState("");
   
@@ -40,8 +39,7 @@ export default function RegistroFarmaciaPage() {
       }
       const data = await res.json();
       
-      setName(data.razao_social || "");
-      setTradeName(data.nome_fantasia || data.razao_social || "");
+      setName(data.razao_social || data.nome_fantasia || "");
       
       const telefoneStr = data.ddd_telefone_1 || "";
       setPhone(telefoneStr);
@@ -100,7 +98,7 @@ export default function RegistroFarmaciaPage() {
     const { error: dbError } = await supabase.from("pharmacies").insert({
       id: crypto.randomUUID(),
       name,
-      trade_name: tradeName,
+      trade_name: name,
       cnpj,
       phone,
       address,
@@ -163,26 +161,13 @@ export default function RegistroFarmaciaPage() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Razão Social *
+                  Nome da Farmácia *
                 </label>
                 <Input
                   type="text"
-                  placeholder="Razão Social"
+                  placeholder="Nome da sua farmácia"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  className="w-full bg-gray-50"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Nome Fantasia
-                </label>
-                <Input
-                  type="text"
-                  placeholder="Nome Fantasia"
-                  value={tradeName}
-                  onChange={(e) => setTradeName(e.target.value)}
                   className="w-full bg-gray-50"
                 />
               </div>

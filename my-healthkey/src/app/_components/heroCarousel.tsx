@@ -1,98 +1,59 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import useEmblaCarousel from "embla-carousel-react";
+import Autoplay from "embla-carousel-autoplay";
 import { useCallback, useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
-
-interface ButtonProps {
-  enabled: boolean;
-  onClick: () => void;
-}
+import { Storefront, ArrowRight } from "@phosphor-icons/react";
 
 interface DotButtonProps {
   selected: boolean;
   onClick: () => void;
 }
 
-function PrevButton({ enabled, onClick }: ButtonProps) {
-  return (
-    <button
-      onClick={onClick}
-      disabled={!enabled}
-      className="absolute left-4 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white rounded-full p-2 z-10 transition-all disabled:opacity-50"
-      style={{ width: "40px", height: "40px" }}
-    >
-      <svg
-        width="24"
-        height="24"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
-      >
-        <path d="M15 18l-6-6 6-6" />
-      </svg>
-    </button>
-  );
-}
-
-function NextButton({ enabled, onClick }: ButtonProps) {
-  return (
-    <button
-      onClick={onClick}
-      disabled={!enabled}
-      className="absolute right-4 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white rounded-full p-2 z-10 transition-all disabled:opacity-50"
-      style={{ width: "40px", height: "40px" }}
-    >
-      <svg
-        width="24"
-        height="24"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
-      >
-        <path d="M9 18l6-6-6-6" />
-      </svg>
-    </button>
-  );
-}
-
 function DotButton({ selected, onClick }: DotButtonProps) {
   return (
     <button
       onClick={onClick}
-      className={`w-3 h-3 rounded-full transition-all mx-1 ${
-        selected ? "bg-[#D32F2F] w-6" : "bg-gray-400 hover:bg-gray-500"
+      className={`transition-all duration-500 rounded-full ${
+        selected
+          ? "w-8 h-2.5 bg-white shadow-lg shadow-white/30"
+          : "w-2.5 h-2.5 bg-white/40 hover:bg-white/60"
       }`}
     />
   );
 }
 
-// Cores rotativas para cada farmácia no carrossel
-const bgColors = ["#C62828", "#2E7D32", "#1565C0", "#E65100", "#6A1B9A", "#00838F"];
+// Gradientes premium para cada slide
+const gradients = [
+  "from-[#C62828] via-[#D32F2F] to-[#EF5350]",
+  "from-[#1B5E20] via-[#2E7D32] to-[#4CAF50]",
+  "from-[#0D47A1] via-[#1565C0] to-[#42A5F5]",
+  "from-[#E65100] via-[#F57C00] to-[#FFB74D]",
+  "from-[#4A148C] via-[#6A1B9A] to-[#AB47BC]",
+  "from-[#006064] via-[#00838F] to-[#26C6DA]",
+];
 
 export function HeroCarousel() {
-  const [emblaRef, emblaApi] = useEmblaCarousel({ loop: true, duration: 30 });
-  const [prevBtnEnabled, setPrevBtnEnabled] = useState(false);
-  const [nextBtnEnabled, setNextBtnEnabled] = useState(false);
+  const [emblaRef, emblaApi] = useEmblaCarousel(
+    { loop: true, duration: 40 },
+    [Autoplay({ delay: 5000, stopOnInteraction: true })]
+  );
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [scrollSnaps, setScrollSnaps] = useState<number[]>([]);
 
-  // Banners fallback (iguais ao original) enquanto carrega do banco
   const fallbackBanners = [
-    { id: "fb1", title: "20% OFF", description: "Em todos os produtos da Loja A", bgColor: "#C62828" },
-    { id: "fb2", title: "Frete Grátis", description: "Nas filiais da Loja B", bgColor: "#2E7D32" },
-    { id: "fb3", title: "Clube de Benefícios", description: "Acumule pontos e troque por produtos", bgColor: "#1565C0" },
-    { id: "fb4", title: "Até 3x sem juros", description: "No cartão de crédito na Loja C", bgColor: "#E65100" },
+    { id: "fb1", title: "Compare Preços", description: "Encontre o medicamento mais barato perto de você", gradient: gradients[0] },
+    { id: "fb2", title: "Farmácias Parceiras", description: "Acesse o catálogo completo de remédios de cada loja", gradient: gradients[1] },
+    { id: "fb3", title: "Saúde Inteligente", description: "Economize tempo e dinheiro com a nossa plataforma", gradient: gradients[2] },
   ];
 
   const [banners, setBanners] = useState(fallbackBanners);
 
   useEffect(() => {
     async function fetchFarmacias() {
-      // Busca as farmácias e a quantidade de medicamentos que cada uma tem
       const supabase = createClient();
       const { data: pharmacies, error } = await supabase
         .from("pharmacies")
@@ -109,7 +70,8 @@ export function HeroCarousel() {
         id: farm.id,
         title: farm.name,
         description: `${farm.pharmacy_medicines.length} medicamentos disponíveis · ${farm.address.split(",").slice(0, 2).join(",")}`,
-        bgColor: bgColors[idx % bgColors.length],
+        gradient: gradients[idx % gradients.length],
+        pharmacyId: farm.id,
       }));
 
       setBanners(bannersFromDB);
@@ -120,8 +82,6 @@ export function HeroCarousel() {
 
   const onSelect = useCallback(() => {
     if (!emblaApi) return;
-    setPrevBtnEnabled(emblaApi.canScrollPrev());
-    setNextBtnEnabled(emblaApi.canScrollNext());
     setSelectedIndex(emblaApi.selectedScrollSnap());
   }, [emblaApi]);
 
@@ -132,7 +92,6 @@ export function HeroCarousel() {
     emblaApi.on("select", onSelect);
   }, [emblaApi, onSelect]);
 
-  // Reinicia o embla quando os banners mudam (para recalcular os snaps)
   useEffect(() => {
     if (!emblaApi) return;
     emblaApi.reInit();
@@ -140,35 +99,68 @@ export function HeroCarousel() {
   }, [banners, emblaApi]);
 
   return (
-    <div className="relative group mt-6">
-      <div className="overflow-hidden rounded-xl mx-16" ref={emblaRef}>
+    <div className="relative group max-w-7xl mx-auto px-6 pt-8 pb-8">
+      <div className="overflow-hidden rounded-3xl shadow-2xl bg-gray-50" ref={emblaRef}>
         <div className="flex">
-          {banners.map((banner) => (
-            <div key={banner.id} className="flex-[0_0_100%] min-w-0 relative">
+          {banners.map((banner: any) => (
+            <div key={banner.id} className="flex-[0_0_100%] min-w-0 flex">
               <div
-                style={{ backgroundColor: banner.bgColor }}
-                className="h-70 md:h-87.5 lg:h-80 w-full flex items-center justify-between px-8 md:px-16"
+                className={`bg-gradient-to-br ${banner.gradient} w-full relative overflow-hidden flex flex-col justify-center`}
+                style={{ minHeight: "380px" }}
               >
-                <div className="text-white max-w-md text-center md:text-left">
-                  <h2 className="text-3xl md:text-5xl font-bold mb-2 md:mb-4">
-                    {banner.title}
-                  </h2>
-                  <p className="text-lg md:text-xl mb-4 md:mb-6">
-                    {banner.description}
-                  </p>
-                  <button className="bg-white text-[#D32F2F] px-4 md:px-6 py-2 md:py-3 rounded-full font-semibold hover:bg-gray-100 transition text-sm md:text-base">
-                    Aproveitar
-                  </button>
+                {/* Elementos decorativos */}
+                <div className="absolute inset-0 pointer-events-none">
+                  <div className="absolute -top-20 -right-20 w-80 h-80 bg-white/10 rounded-full blur-3xl"></div>
+                  <div className="absolute bottom-0 left-0 w-64 h-64 bg-black/10 rounded-full blur-3xl"></div>
+                  {/* Pattern sutil */}
+                  <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: "radial-gradient(circle, white 1px, transparent 1px)", backgroundSize: "24px 24px" }}></div>
                 </div>
 
-                <div className="hidden md:block">
-                  <Image
-                    src="/Paracetamol.png"
-                    alt="Paracetamol"
-                    width={180}
-                    height={180}
-                    className="drop-shadow-2xl"
-                  />
+                <div className="relative z-10 flex items-center justify-between px-10 md:px-16 py-12">
+                  {/* Conteúdo textual */}
+                  <div className="text-white max-w-lg space-y-5">
+                    {banner.pharmacyId && (
+                      <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-white/15 backdrop-blur-sm rounded-full border border-white/20">
+                        <Storefront size={14} weight="fill" />
+                        <span className="text-xs font-semibold uppercase tracking-wider">Farmácia Parceira</span>
+                      </div>
+                    )}
+                    <h2 className="text-3xl md:text-5xl lg:text-5xl font-extrabold tracking-tight leading-[1.1] drop-shadow-md">
+                      {banner.title}
+                    </h2>
+                    <p className="text-base md:text-xl font-light text-white/85 leading-relaxed max-w-md line-clamp-2">
+                      {banner.description}
+                    </p>
+                    {banner.pharmacyId ? (
+                      <Link
+                        href={`/farmacia/${banner.pharmacyId}`}
+                        className="inline-flex items-center gap-2 bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white px-6 py-3 rounded-xl font-semibold transition-all duration-300 border border-white/20 hover:scale-105 hover:shadow-xl group/btn"
+                      >
+                        Ver Farmácia
+                        <ArrowRight size={18} className="group-hover/btn:translate-x-1 transition-transform" weight="bold" />
+                      </Link>
+                    ) : (
+                      <Link
+                        href="/busca"
+                        className="inline-flex items-center gap-2 bg-white text-gray-900 px-6 py-3 rounded-xl font-bold transition-all duration-300 hover:scale-105 hover:shadow-[0_0_30px_rgba(255,255,255,0.3)] group/btn"
+                      >
+                        Explorar
+                        <ArrowRight size={18} className="group-hover/btn:translate-x-1 transition-transform" weight="bold" />
+                      </Link>
+                    )}
+                  </div>
+
+                  {/* Imagem ilustrativa */}
+                  <div className="hidden md:flex items-center justify-center relative">
+                    <div className="absolute w-64 h-64 bg-white/10 rounded-full blur-2xl"></div>
+                    <Image
+                      src="/Paracetamol.png"
+                      alt="Medicamento"
+                      width={200}
+                      height={200}
+                      className="drop-shadow-2xl relative z-10 hover:scale-110 transition-transform duration-500 animate-[bounce_4s_ease-in-out_infinite]"
+                    />
+                  </div>
                 </div>
               </div>
             </div>
@@ -176,16 +168,22 @@ export function HeroCarousel() {
         </div>
       </div>
 
-      <PrevButton
+      {/* Setas de navegação */}
+      <button
         onClick={() => emblaApi?.scrollPrev()}
-        enabled={prevBtnEnabled}
-      />
-      <NextButton
+        className="absolute left-10 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-white/90 backdrop-blur-sm shadow-xl flex items-center justify-center text-gray-700 hover:bg-white hover:scale-110 transition-all duration-300 opacity-0 group-hover:opacity-100 z-20"
+      >
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M15 18l-6-6 6-6" /></svg>
+      </button>
+      <button
         onClick={() => emblaApi?.scrollNext()}
-        enabled={nextBtnEnabled}
-      />
+        className="absolute right-10 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-white/90 backdrop-blur-sm shadow-xl flex items-center justify-center text-gray-700 hover:bg-white hover:scale-110 transition-all duration-300 opacity-0 group-hover:opacity-100 z-20"
+      >
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M9 18l6-6-6-6" /></svg>
+      </button>
 
-      <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
+      {/* Dots indicator */}
+      <div className="absolute bottom-12 left-1/2 -translate-x-1/2 flex gap-2 z-20">
         {scrollSnaps.map((_, index) => (
           <DotButton
             key={index}

@@ -35,12 +35,12 @@ export async function updateSession(request: NextRequest) {
   // Rotas protegidas (apenas donos de farmácia logados)
   if (!user && request.nextUrl.pathname.startsWith('/dashboard')) {
     const url = request.nextUrl.clone()
-    url.pathname = '/auth'
+    url.pathname = '/login'
     return NextResponse.redirect(url)
   }
 
-  // Redireciona usuários logados que tentam acessar a tela de auth
-  if (user && request.nextUrl.pathname.startsWith('/auth')) {
+  // Redireciona usuários logados que tentam acessar a tela de login ou registro
+  if (user && (request.nextUrl.pathname.startsWith('/login') || request.nextUrl.pathname.startsWith('/registro') || request.nextUrl.pathname.startsWith('/registro-farmacia'))) {
     const url = request.nextUrl.clone()
     url.pathname = '/dashboard'
     return NextResponse.redirect(url)
