@@ -95,7 +95,21 @@ export default function RegistroFarmaciaPage() {
       return;
     }
 
-    // 2. Insere a farmácia
+    // 2. Geocodificar o endereço para obter coordenadas reais
+    let latitude = -22.2158;  // Fallback
+    let longitude = -45.7028;
+    try {
+      const geoRes = await fetch(`/api/geocode?endereco=${encodeURIComponent(address)}`);
+      const geoData = await geoRes.json();
+      if (geoData.encontrado) {
+        latitude = geoData.lat;
+        longitude = geoData.lon;
+      }
+    } catch {
+      // Se falhar, usa coordenadas padrão
+    }
+
+    // 3. Insere a farmácia
     const { error: dbError } = await supabase.from("pharmacies").insert({
       id: crypto.randomUUID(),
       name,
@@ -103,8 +117,8 @@ export default function RegistroFarmaciaPage() {
       cnpj,
       phone,
       address,
-      latitude: -22.2158, // TODO: Geocodificar endereço real depois
-      longitude: -45.7028,
+      latitude,
+      longitude,
       owner_id: authData.user.id
     });
 
@@ -115,7 +129,7 @@ export default function RegistroFarmaciaPage() {
       return;
     }
 
-    router.push("/login/loja");
+    router.push("/login");
   };
 
   return (

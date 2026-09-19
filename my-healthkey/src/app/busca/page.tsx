@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { MagnifyingGlass, SlidersHorizontal, Pill, Storefront, XCircle } from "@phosphor-icons/react";
 import { createClient } from "@/lib/supabase/client";
+import { Header } from "@/app/_components/header";
 
 type Ordenacao = "relevancia" | "menor-preco" | "maior-preco" | "nome";
 type TipoBusca = "medicamentos" | "farmacias";
@@ -155,13 +156,8 @@ function BuscaContent() {
 
   return (
     <main style={{ backgroundColor: "#F8F9FA" }} className="min-h-screen">
-      {/* Navbar Minimalista */}
-      <nav className="bg-white/80 backdrop-blur-md sticky top-0 z-50 border-b border-gray-100 px-6 h-20 flex items-center shadow-sm">
-        <Link href="/" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
-          <img src="/Logo.png" alt="Logo" className="h-12 w-auto" />
-          <span className="text-[#D32F2F] font-bold text-xl tracking-tight hidden sm:block">My-HealthKey</span>
-        </Link>
-      </nav>
+      {/* Header global com barra de pesquisa */}
+      <Header />
 
       {/* Cabeçalho da busca */}
       <section style={{ backgroundColor: "#C62828" }} className="text-white pb-6 relative shadow-inner">
