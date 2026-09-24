@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { MagnifyingGlass, SlidersHorizontal, Pill, Storefront, XCircle } from "@phosphor-icons/react";
 import { createClient } from "@/lib/supabase/client";
 import { Header } from "@/app/_components/header";
+import { Footer } from "@/app/_components/footer";
 
 type Ordenacao = "relevancia" | "menor-preco" | "maior-preco" | "nome";
 type TipoBusca = "medicamentos" | "farmacias";
@@ -58,8 +59,8 @@ function BuscaContent() {
         const uniqueNames = Array.from(new Set(names)).slice(0, 5);
         setTagsDinamicas(["Todos", ...uniqueNames]);
       } else {
-        // Fallback
-        setTagsDinamicas(["Todos", "Paracetamol", "Dipirona", "Ibuprofeno"]);
+        // Sem tags prévias no banco
+        setTagsDinamicas(["Todos"]);
       }
     }
     fetchTags();
@@ -170,30 +171,30 @@ function BuscaContent() {
 
       {/* Cabeçalho da busca */}
       <section style={{ backgroundColor: "#C62828" }} className="text-white pb-6 relative shadow-inner">
-        <div className="container mx-auto px-6 pt-8 pb-6 max-w-6xl">
+        <div className="container mx-auto px-4 sm:px-6 pt-6 sm:pt-8 pb-4 sm:pb-6 max-w-6xl">
           
-          <div className="flex gap-4 mb-6">
+          <div className="flex gap-2.5 sm:gap-4 mb-4 sm:mb-6">
             <button
               onClick={() => setTipoBusca("medicamentos")}
-              className={`flex items-center gap-2 px-5 py-2.5 rounded-full font-medium transition-all ${
+              className={`flex items-center gap-1.5 sm:gap-2 px-4 sm:px-5 py-2 sm:py-2.5 rounded-full text-xs sm:text-sm font-medium transition-all ${
                 tipoBusca === "medicamentos" ? "bg-white text-red-700 shadow-md scale-105" : "bg-red-800/50 hover:bg-red-800 text-red-50"
               }`}
             >
-              <Pill size={20} weight={tipoBusca === "medicamentos" ? "fill" : "regular"} />
+              <Pill size={18} weight={tipoBusca === "medicamentos" ? "fill" : "regular"} />
               Medicamentos
             </button>
             <button
               onClick={() => setTipoBusca("farmacias")}
-              className={`flex items-center gap-2 px-5 py-2.5 rounded-full font-medium transition-all ${
+              className={`flex items-center gap-1.5 sm:gap-2 px-4 sm:px-5 py-2 sm:py-2.5 rounded-full text-xs sm:text-sm font-medium transition-all ${
                 tipoBusca === "farmacias" ? "bg-white text-red-700 shadow-md scale-105" : "bg-red-800/50 hover:bg-red-800 text-red-50"
               }`}
             >
-              <Storefront size={20} weight={tipoBusca === "farmacias" ? "fill" : "regular"} />
+              <Storefront size={18} weight={tipoBusca === "farmacias" ? "fill" : "regular"} />
               Farmácias
             </button>
           </div>
 
-          <h1 className="text-3xl font-bold">
+          <h1 className="text-2xl sm:text-3xl font-bold">
             {termoSubmit ? (
               <>Resultados para &quot;{termoSubmit}&quot;</>
             ) : (
@@ -205,11 +206,11 @@ function BuscaContent() {
 
       {/* Filtros (apenas para medicamentos) */}
       {tipoBusca === "medicamentos" && (
-        <section className="container mx-auto px-6 max-w-6xl py-6 animate-in slide-in-from-top-4 fade-in duration-300">
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
+        <section className="container mx-auto px-4 sm:px-6 max-w-6xl py-4 sm:py-6 animate-in slide-in-from-top-4 fade-in duration-300">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 sm:gap-6">
             
-            {/* Tags de Categoria (Agem como filtros de busca rápida) */}
-            <div className="flex items-center gap-2 flex-wrap flex-1">
+            {/* Tags de Categoria (Agem como filtros de busca rápida deslizáveis no mobile) */}
+            <div className="flex items-center gap-1.5 sm:gap-2 overflow-x-auto no-scrollbar flex-nowrap sm:flex-wrap pb-1.5 sm:pb-0 -mx-4 px-4 sm:mx-0 sm:px-0 flex-1">
               {tagsDinamicas.map((cat) => {
                 const isActive = cat === "Todos" ? termoSubmit === "" : termoSubmit.toLowerCase() === cat.toLowerCase();
                 return (
@@ -220,7 +221,7 @@ function BuscaContent() {
                       setTermo(newTerm);
                       setTermoSubmit(newTerm);
                     }}
-                    className={`text-sm px-5 py-2 rounded-full border font-medium transition-all duration-200 hover:shadow-md ${
+                    className={`text-xs sm:text-sm px-3.5 sm:px-5 py-1.5 sm:py-2 rounded-full border font-medium transition-all duration-200 hover:shadow-md shrink-0 whitespace-nowrap ${
                       isActive
                         ? "bg-red-600 border-red-600 text-white shadow-red-200 shadow-sm"
                         : "bg-white border-gray-200 text-gray-600 hover:border-red-300 hover:text-red-600"
@@ -233,15 +234,17 @@ function BuscaContent() {
             </div>
 
             {/* Seletor de Ordenação (Customizado) */}
-            <div className="relative">
+            <div className="relative w-full sm:w-auto">
               <div 
                 onClick={() => setDropdownAberto(!dropdownAberto)}
-                className="flex items-center gap-3 bg-white border border-gray-200 rounded-xl px-4 py-2 shadow-sm hover:border-red-300 transition-colors cursor-pointer select-none"
+                className="flex items-center justify-between sm:justify-start gap-3 bg-white border border-gray-200 rounded-xl px-4 py-2 shadow-sm hover:border-red-300 transition-colors cursor-pointer select-none"
               >
-                <SlidersHorizontal size={20} className="text-red-500" />
-                <span className="text-sm font-medium text-gray-600 whitespace-nowrap">
-                  Ordenar por: <span className="text-gray-900 ml-1">{opcoesOrdenacao[ordenacao]}</span>
-                </span>
+                <div className="flex items-center gap-2">
+                  <SlidersHorizontal size={18} className="text-red-500" />
+                  <span className="text-xs sm:text-sm font-medium text-gray-600 whitespace-nowrap">
+                    Ordenar por: <span className="text-gray-900 ml-1 font-semibold">{opcoesOrdenacao[ordenacao]}</span>
+                  </span>
+                </div>
                 <svg className={`h-4 w-4 text-gray-500 transition-transform duration-200 ${dropdownAberto ? 'rotate-180' : ''}`} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
                   <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
                 </svg>
@@ -251,7 +254,7 @@ function BuscaContent() {
               {dropdownAberto && (
                 <>
                   <div className="fixed inset-0 z-40" onClick={() => setDropdownAberto(false)}></div>
-                  <div className="absolute right-0 mt-2 w-56 bg-white rounded-xl shadow-lg border border-gray-100 py-2 z-50 animate-in fade-in zoom-in-95 duration-100">
+                  <div className="absolute left-0 sm:left-auto right-0 mt-2 w-full sm:w-56 bg-white rounded-xl shadow-lg border border-gray-100 py-2 z-50 animate-in fade-in zoom-in-95 duration-100">
                     {(Object.keys(opcoesOrdenacao) as Ordenacao[]).map((chave) => (
                       <button
                         key={chave}
@@ -259,7 +262,7 @@ function BuscaContent() {
                           setOrdenacao(chave);
                           setDropdownAberto(false);
                         }}
-                        className={`w-full text-left px-4 py-2.5 text-sm font-medium transition-colors ${
+                        className={`w-full text-left px-4 py-2.5 text-xs sm:text-sm font-medium transition-colors ${
                           ordenacao === chave
                             ? "bg-red-50 text-red-700"
                             : "text-gray-700 hover:bg-gray-50"
@@ -277,7 +280,7 @@ function BuscaContent() {
       )}
 
       {/* Resultados */}
-      <section className="container mx-auto px-6 max-w-6xl pb-16 pt-2">
+      <section className="container mx-auto px-4 sm:px-6 max-w-6xl pb-16 pt-2">
         
         {tipoBusca === "medicamentos" ? (
           <>
@@ -391,6 +394,7 @@ function BuscaContent() {
           </>
         )}
       </section>
+      <Footer />
     </main>
   );
 }

@@ -1,9 +1,9 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import { cn } from "@/lib/utils";
 
-const jetbrainsMono = JetBrains_Mono({subsets:['latin'],variable:'--font-mono'});
+const jetbrainsMono = JetBrains_Mono({ subsets: ["latin"], variable: "--font-mono" });
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -15,9 +15,16 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 5,
+  themeColor: "#D32F2F",
+};
+
 export const metadata: Metadata = {
-  title: "My-HealthKey",
-  description: "Procure os remedios mais baratos perto de vocẽ, sempre presando pela sua saude e seu tempo.",
+  title: "My-HealthKey - Compare Preços de Medicamentos",
+  description: "Procure os remédios mais baratos perto de você, sempre prezando pela sua saúde e seu tempo.",
 };
 
 export default function RootLayout({
@@ -27,7 +34,7 @@ export default function RootLayout({
 }>) {
   return (
     <html
-      lang="en"
+      lang="pt-BR"
       className={cn("h-full", "antialiased", geistSans.variable, geistMono.variable, "font-mono", jetbrainsMono.variable)}
     >
       <head>
@@ -36,7 +43,7 @@ export default function RootLayout({
         <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
         <link rel="manifest" href="/site.webmanifest" />
       </head>
-      <body className="min-h-full flex flex-col">{children}</body>
+      <body className="min-h-full flex flex-col w-full max-w-full overflow-x-hidden bg-[#F8F9FA]">{children}</body>
     </html>
   );
 }

@@ -1,20 +1,39 @@
 import type { NextConfig } from "next";
+import path from "path";
 
 const nextConfig: NextConfig = {
-  /* config options here */
-  reactCompiler: true,
+  turbopack: {
+    root: path.resolve(__dirname),
+  },
   images: {
     remotePatterns: [
       {
-        protocol: 'https',
-        hostname: 'cdn.pixabay.com',
+        protocol: "https",
+        hostname: "cdn.pixabay.com",
       },
       {
-        protocol: 'https',
-        hostname: 'images.unsplash.com',
+        protocol: "https",
+        hostname: "images.unsplash.com",
+      },
+      {
+        protocol: "https",
+        hostname: "*.unsplash.com",
+      },
+      {
+        protocol: "https",
+        hostname: "**.supabase.co",
+      },
+      {
+        protocol: "https",
+        hostname: "**",
+      },
+      {
+        protocol: "http",
+        hostname: "**",
       },
     ],
   },
+  reactCompiler: true,
 };
 
 export default nextConfig;

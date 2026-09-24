@@ -128,18 +128,68 @@ export function EstoqueManager({ initialStock, pharmacyId }: { initialStock: any
 
   return (
     <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-      <div className="p-6 flex justify-between items-center border-b border-gray-50">
-        <h3 className="text-lg font-semibold text-gray-800">Seus Medicamentos</h3>
+      <div className="p-4 sm:p-6 flex justify-between items-center border-b border-gray-50">
+        <div>
+          <h3 className="text-base sm:text-lg font-semibold text-gray-800">Seus Medicamentos</h3>
+          <p className="text-xs text-gray-400">{stock.length} medicamentos cadastrados</p>
+        </div>
         <button
           onClick={() => setIsModalOpen(true)}
-          className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-xl flex items-center gap-2 transition-colors duration-300 font-medium shadow-md shadow-red-200"
+          className="bg-red-600 hover:bg-red-700 text-white px-3.5 sm:px-4 py-2 rounded-xl flex items-center gap-1.5 sm:gap-2 transition-colors duration-300 font-medium text-xs sm:text-sm shadow-md shadow-red-200"
         >
-          <Plus size={20} weight="bold" />
+          <Plus size={18} weight="bold" />
           Adicionar
         </button>
       </div>
 
-      <div className="overflow-x-auto">
+      {/* Visão Mobile (Cards) */}
+      <div className="block md:hidden divide-y divide-gray-100">
+        {stock.length === 0 ? (
+          <div className="p-8 text-center text-gray-400 text-sm">
+            Nenhum medicamento no estoque. Adicione o seu primeiro!
+          </div>
+        ) : (
+          stock.map((item) => {
+            const med = Array.isArray(item.medicines) ? item.medicines[0] : item.medicines;
+            return (
+              <div key={item.id} className="p-4 space-y-2">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <h4 className="font-semibold text-gray-900 text-sm">{med?.name}</h4>
+                    <p className="text-xs text-gray-500">{med?.active_ingredient || "Sem princípio ativo"}</p>
+                  </div>
+                  <span className="font-bold text-red-600 text-base">
+                    R$ {item.price.toFixed(2).replace('.', ',')}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between pt-1">
+                  <button 
+                    onClick={() => handleToggleAvailability(item.id, item.is_available)}
+                    className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold transition-colors ${
+                    item.is_available ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-600"
+                  }`}>
+                    {item.is_available ? (
+                      <><CheckCircle size={13} weight="fill" /> Disponível</>
+                    ) : (
+                      <><WarningCircle size={13} weight="fill" /> Indisponível</>
+                    )}
+                  </button>
+                  <button
+                    onClick={() => handleRemoveStock(item.id)}
+                    className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                    title="Remover"
+                  >
+                    <Trash size={18} />
+                  </button>
+                </div>
+              </div>
+            );
+          })
+        )}
+      </div>
+
+      {/* Visão Desktop (Tabela) */}
+      <div className="hidden md:block overflow-x-auto">
         <table className="w-full text-left border-collapse">
           <thead>
             <tr className="bg-gray-50 text-gray-500 text-sm border-b border-gray-100">
@@ -164,7 +214,7 @@ export function EstoqueManager({ initialStock, pharmacyId }: { initialStock: any
                   <tr key={item.id} className="border-b border-gray-50 hover:bg-gray-50/50 transition-colors">
                     <td className="p-4 font-medium text-gray-800">{med?.name}</td>
                     <td className="p-4 text-gray-500">{med?.active_ingredient || "-"}</td>
-                    <td className="p-4 font-bold text-red-600">R$ {item.price.toFixed(2)}</td>
+                    <td className="p-4 font-bold text-red-600">R$ {item.price.toFixed(2).replace('.', ',')}</td>
                     <td className="p-4">
                       <button 
                         onClick={() => handleToggleAvailability(item.id, item.is_available)}
@@ -179,7 +229,6 @@ export function EstoqueManager({ initialStock, pharmacyId }: { initialStock: any
                       </button>
                     </td>
                     <td className="p-4 flex gap-2 justify-end">
-                      {/* Omitindo Edit por simplicidade, toggle availability já ajuda muito */}
                       <button
                         onClick={() => handleRemoveStock(item.id)}
                         className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
@@ -197,16 +246,16 @@ export function EstoqueManager({ initialStock, pharmacyId }: { initialStock: any
       </div>
 
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-3 sm:p-4">
           <div className="bg-white rounded-3xl w-full max-w-lg overflow-hidden shadow-2xl animate-in fade-in zoom-in duration-200">
-            <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
-              <h2 className="text-xl font-bold text-gray-800">Adicionar ao Estoque</h2>
+            <div className="p-5 sm:p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
+              <h2 className="text-lg sm:text-xl font-bold text-gray-800">Adicionar ao Estoque</h2>
               <button onClick={() => { setIsModalOpen(false); resetForm(); }} className="text-gray-400 hover:text-gray-600">
-                <X size={24} />
+                <X size={22} />
               </button>
             </div>
             
-            <div className="p-6 space-y-6 max-h-[70vh] overflow-y-auto">
+            <div className="p-4 sm:p-6 space-y-5 max-h-[75vh] overflow-y-auto">
               {!isCreatingNew ? (
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Buscar Remédio Existente</label>
@@ -322,16 +371,16 @@ export function EstoqueManager({ initialStock, pharmacyId }: { initialStock: any
               </div>
             </div>
 
-            <div className="p-6 border-t border-gray-100 bg-gray-50/50 flex justify-end gap-3">
+            <div className="p-4 sm:p-6 border-t border-gray-100 bg-gray-50/50 flex flex-col-reverse sm:flex-row justify-end gap-2 sm:gap-3">
               <button 
                 onClick={() => { setIsModalOpen(false); resetForm(); }}
-                className="px-6 py-2.5 text-gray-600 font-medium hover:bg-gray-100 rounded-xl transition-colors"
+                className="w-full sm:w-auto px-6 py-2.5 text-gray-600 font-medium hover:bg-gray-100 rounded-xl transition-colors text-center"
               >
                 Cancelar
               </button>
               <button 
                 onClick={handleAddStock}
-                className="px-6 py-2.5 bg-red-600 hover:bg-red-700 text-white font-medium rounded-xl shadow-md shadow-red-200 transition-colors"
+                className="w-full sm:w-auto px-6 py-2.5 bg-red-600 hover:bg-red-700 text-white font-medium rounded-xl shadow-md shadow-red-200 transition-colors text-center"
               >
                 Salvar Estoque
               </button>

@@ -6,6 +6,9 @@ import Link from "next/link";
 import { MapPin, Phone, Globe, Pill, ArrowLeft, Storefront, Clock } from "@phosphor-icons/react";
 import { createClient } from "@/lib/supabase/client";
 
+import { Header } from "@/app/_components/header";
+import { Footer } from "@/app/_components/footer";
+
 // Leaflet precisa ser carregado sem SSR
 const FarmaciaMap = dynamic(() => import("./FarmaciaMap"), { ssr: false });
 
@@ -91,30 +94,32 @@ export function FarmaciaDetail({ pharmacy, stock, initialReviews = [] }: { pharm
   };
 
   return (
-    <main className="min-h-screen" style={{ backgroundColor: "#F8F9FA" }}>
-      {/* Header da farmácia */}
-      <section style={{ backgroundColor: "#C62828" }} className="text-white">
-        <div className="container mx-auto px-6 py-8 max-w-6xl">
-          <Link href="/busca" className="inline-flex items-center gap-2 text-red-200 hover:text-white text-sm mb-4 transition-colors group">
-            <ArrowLeft size={16} className="group-hover:-translate-x-1 transition-transform" />
-            Voltar à busca
-          </Link>
+    <>
+      <Header />
+      <main className="min-h-screen" style={{ backgroundColor: "#F8F9FA" }}>
+        {/* Header da farmácia */}
+        <section style={{ backgroundColor: "#C62828" }} className="text-white">
+          <div className="container mx-auto px-4 sm:px-6 py-6 sm:py-8 max-w-6xl">
+            <Link href="/busca" className="inline-flex items-center gap-2 text-red-200 hover:text-white text-xs sm:text-sm mb-4 transition-colors group">
+              <ArrowLeft size={16} className="group-hover:-translate-x-1 transition-transform" />
+              Voltar à busca
+            </Link>
 
-          <div className="flex items-center gap-4">
-            <div className="w-16 h-16 bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center">
-              <Storefront size={32} weight="fill" className="text-white" />
-            </div>
-            <div>
-              <h1 className="text-3xl font-bold">{pharmacy.name}</h1>
-              {pharmacy.trade_name && pharmacy.trade_name !== pharmacy.name && (
-                <p className="text-red-200 text-sm mt-1">{pharmacy.trade_name}</p>
-              )}
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4">
+              <div className="w-12 h-12 sm:w-16 sm:h-16 bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center shrink-0">
+                <Storefront size={28} weight="fill" className="text-white sm:text-3xl" />
+              </div>
+              <div>
+                <h1 className="text-2xl sm:text-3xl font-bold">{pharmacy.name}</h1>
+                {pharmacy.trade_name && pharmacy.trade_name !== pharmacy.name && (
+                  <p className="text-red-200 text-xs sm:text-sm mt-0.5">{pharmacy.trade_name}</p>
+                )}
+              </div>
             </div>
           </div>
-        </div>
-      </section>
+        </section>
 
-      <div className="container mx-auto px-6 max-w-6xl py-8">
+      <div className="container mx-auto px-4 sm:px-6 max-w-6xl py-6 sm:py-8">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Coluna esquerda: Mapa + Info */}
           <div className="lg:col-span-1 space-y-6">
@@ -205,22 +210,30 @@ export function FarmaciaDetail({ pharmacy, stock, initialReviews = [] }: { pharm
                     const med = Array.isArray(item.medicines) ? item.medicines[0] : item.medicines;
                     if (!med) return null;
                     return (
-                      <div key={item.id} className="p-5 flex items-center justify-between hover:bg-gray-50/50 transition-colors">
+                      <Link
+                        key={item.id}
+                        href={`/produto/${med.id}`}
+                        className="p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-2 hover:bg-red-50/40 transition-colors group block"
+                      >
                         <div className="flex-1 min-w-0">
-                          <h3 className="font-semibold text-gray-800">{med.name}</h3>
+                          <h3 className="font-semibold text-gray-800 group-hover:text-red-600 transition-colors text-sm sm:text-base">
+                            {med.name}
+                          </h3>
                           {med.active_ingredient && (
-                            <p className="text-sm text-gray-500 mt-0.5">
+                            <p className="text-xs sm:text-sm text-gray-500 mt-0.5">
                               Princípio ativo: {med.active_ingredient}
                             </p>
                           )}
                         </div>
-                        <div className="text-right shrink-0 ml-4">
-                          <p className="text-xl font-bold text-red-600">
-                            R$ {Number(item.price).toFixed(2)}
+                        <div className="flex items-center justify-between sm:justify-end gap-3 sm:ml-4">
+                          <span className="text-xs text-green-600 font-semibold bg-green-50 px-2.5 py-0.5 rounded-full">
+                            Disponível
+                          </span>
+                          <p className="text-lg sm:text-xl font-bold text-red-600">
+                            R$ {Number(item.price).toFixed(2).replace('.', ',')}
                           </p>
-                          <span className="text-xs text-green-600 font-medium">Disponível</span>
                         </div>
-                      </div>
+                      </Link>
                     );
                   })}
                 </div>
@@ -228,17 +241,17 @@ export function FarmaciaDetail({ pharmacy, stock, initialReviews = [] }: { pharm
             </div>
 
             {/* Nova Seção: Avaliações da Farmácia */}
-            <div className="mt-8 bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden p-6">
-              <h2 className="text-xl font-bold text-gray-800 mb-6">Avaliações da Farmácia</h2>
+            <div className="mt-8 bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden p-4 sm:p-6">
+              <h2 className="text-lg sm:text-xl font-bold text-gray-800 mb-6">Avaliações da Farmácia</h2>
               
               {user ? (
                 isPharmacy ? (
-                  <div className="bg-orange-50 text-orange-800 p-4 rounded-lg mb-8">
+                  <div className="bg-orange-50 text-orange-800 p-4 rounded-xl mb-8 text-sm">
                     Apenas contas de clientes podem avaliar farmácias.
                   </div>
                 ) : (
-                  <form onSubmit={handleSubmitReview} className="mb-8 p-6 border rounded-xl bg-gray-50">
-                    <h3 className="font-semibold text-lg mb-4">Deixe sua avaliação</h3>
+                  <form onSubmit={handleSubmitReview} className="mb-8 p-4 sm:p-6 border border-gray-100 rounded-xl bg-gray-50">
+                    <h3 className="font-semibold text-base sm:text-lg mb-3">Deixe sua avaliação</h3>
                     <div className="flex gap-2 mb-4">
                       {[1, 2, 3, 4, 5].map((star) => (
                         <button
@@ -255,20 +268,20 @@ export function FarmaciaDetail({ pharmacy, stock, initialReviews = [] }: { pharm
                       value={novoComentario}
                       onChange={(e) => setNovoComentario(e.target.value)}
                       placeholder="Como foi sua experiência com esta farmácia?"
-                      className="w-full p-3 border rounded-lg resize-none h-24 mb-4 outline-none focus:ring-2 focus:ring-red-500/50"
+                      className="w-full p-3 bg-white border border-gray-200 rounded-xl resize-none h-24 mb-4 outline-none focus:ring-2 focus:ring-red-500/50 text-sm"
                       required
                     />
                     <button
                       type="submit"
                       disabled={enviandoReview}
-                      className="bg-[#D32F2F] hover:bg-[#C62828] text-white px-6 py-2 rounded-lg font-semibold transition-colors disabled:opacity-50"
+                      className="bg-[#D32F2F] hover:bg-[#C62828] text-white px-5 sm:px-6 py-2.5 rounded-xl font-semibold text-sm transition-colors disabled:opacity-50"
                     >
                       {enviandoReview ? "Enviando..." : "Enviar Avaliação"}
                     </button>
                   </form>
                 )
               ) : (
-                <div className="bg-gray-50 text-gray-600 p-4 rounded-lg mb-8 flex justify-between items-center">
+                <div className="bg-gray-50 text-gray-600 p-4 rounded-xl mb-8 flex flex-col sm:flex-row gap-2 sm:items-center sm:justify-between text-sm">
                   <span>Faça login para avaliar esta farmácia.</span>
                   <Link href="/login" className="text-[#D32F2F] font-semibold hover:underline">
                     Fazer Login
@@ -279,23 +292,23 @@ export function FarmaciaDetail({ pharmacy, stock, initialReviews = [] }: { pharm
               {/* Lista de Avaliações */}
               <div className="space-y-6">
                 {reviews.length === 0 ? (
-                  <p className="text-gray-500 text-center py-4">Nenhuma avaliação ainda. Seja o primeiro a avaliar!</p>
+                  <p className="text-gray-500 text-center py-4 text-sm">Nenhuma avaliação ainda. Seja o primeiro a avaliar!</p>
                 ) : (
                   reviews.map((rev) => (
-                    <div key={rev.id} className="border-b pb-6 last:border-b-0 last:pb-0">
-                      <div className="flex items-center gap-2 mb-2">
-                        <div className="w-10 h-10 bg-red-100 text-red-600 rounded-full flex items-center justify-center font-bold text-lg">
+                    <div key={rev.id} className="border-b border-gray-100 pb-5 last:border-b-0 last:pb-0">
+                      <div className="flex items-center gap-3 mb-2">
+                        <div className="w-9 h-9 bg-red-100 text-red-600 rounded-full flex items-center justify-center font-bold text-sm shrink-0">
                           {rev.user_name.charAt(0).toUpperCase()}
                         </div>
                         <div>
-                          <span className="font-semibold block">{rev.user_name}</span>
-                          <span className="text-yellow-500 text-sm">
+                          <span className="font-semibold block text-gray-800 text-sm sm:text-base">{rev.user_name}</span>
+                          <span className="text-yellow-500 text-xs sm:text-sm">
                             {"★".repeat(rev.rating)}{"☆".repeat(5 - rev.rating)}
                           </span>
                         </div>
                       </div>
-                      <p className="text-gray-700 ml-12">{rev.comment}</p>
-                      <span className="text-xs text-gray-400 ml-12 mt-2 block">
+                      <p className="text-gray-700 text-sm sm:text-base pl-0 sm:pl-12 mt-1.5">{rev.comment}</p>
+                      <span className="text-xs text-gray-400 pl-0 sm:pl-12 mt-1 block">
                         {new Date(rev.created_at).toLocaleDateString("pt-BR")}
                       </span>
                     </div>
@@ -307,5 +320,7 @@ export function FarmaciaDetail({ pharmacy, stock, initialReviews = [] }: { pharm
         </div>
       </div>
     </main>
+    <Footer />
+  </>
   );
 }

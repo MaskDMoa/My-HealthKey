@@ -93,7 +93,6 @@ export default function ProdutoPage() {
         imagem: data.image_url || "/Paracetamol.png",
         categoria: data.active_ingredient || "Medicamentos",
         preco: menorPreco,
-        estoque: 100, // TODO: somar estoque real quando o BD suportar qtd
         avaliacao: calcAvg(),
         totalAvaliacoes: reviewsData?.length || 0
       });
@@ -253,25 +252,33 @@ export default function ProdutoPage() {
                     {produto.descricao}
                   </p>
 
-                  <p className="text-sm text-green-600 mt-4">
-                    ✅ Em estoque ({produto.estoque} unidades)
+                  <p className="text-sm font-medium mt-4 flex items-center gap-2">
+                    {produto.preco > 0 ? (
+                      <span className="text-emerald-700 bg-emerald-50 px-3 py-1 rounded-full">
+                        ✅ Disponível nas farmácias parceiras
+                      </span>
+                    ) : (
+                      <span className="text-amber-700 bg-amber-50 px-3 py-1 rounded-full">
+                        ⚠️ Consulte disponibilidade nas farmácias
+                      </span>
+                    )}
                   </p>
                 </div>
 
                 {/* Compra */}
                 <div className="border-t pt-6 mt-6">
-                  <div className="flex items-center gap-4">
-                    <div className="flex items-center border rounded-lg">
+                  <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-4">
+                    <div className="flex items-center justify-between sm:justify-start border border-gray-200 rounded-xl px-2 py-1">
                       <button
                         onClick={() => setQuantidade(Math.max(1, quantidade - 1))}
-                        className="px-3 py-2 text-gray-600 hover:bg-gray-100 transition"
+                        className="w-10 h-10 flex items-center justify-center text-gray-600 hover:bg-gray-100 rounded-lg transition text-lg"
                       >
                         -
                       </button>
-                      <span className="px-4 py-2 font-semibold">{quantidade}</span>
+                      <span className="px-4 font-bold text-gray-800">{quantidade}</span>
                       <button
                         onClick={() => setQuantidade(quantidade + 1)}
-                        className="px-3 py-2 text-gray-600 hover:bg-gray-100 transition"
+                        className="w-10 h-10 flex items-center justify-center text-gray-600 hover:bg-gray-100 rounded-lg transition text-lg"
                       >
                         +
                       </button>
@@ -279,7 +286,7 @@ export default function ProdutoPage() {
 
                     <Button
                       onClick={handleAddToCart}
-                      className="flex-1 bg-[#D32F2F] hover:bg-[#C62828] text-white py-6 text-lg"
+                      className="w-full sm:flex-1 bg-[#D32F2F] hover:bg-[#C62828] text-white py-4 sm:py-6 text-base sm:text-lg font-bold rounded-xl shadow-lg shadow-red-200"
                     >
                       Adicionar ao carrinho
                     </Button>
@@ -345,7 +352,7 @@ export default function ProdutoPage() {
                 </form>
               )
             ) : (
-              <div className="bg-gray-50 text-gray-600 p-4 rounded-lg mb-8 flex justify-between items-center">
+              <div className="bg-gray-50 text-gray-600 p-4 rounded-xl mb-8 flex flex-col sm:flex-row gap-2 sm:items-center sm:justify-between">
                 <span>Faça login para deixar uma avaliação.</span>
                 <Link href="/login" className="text-[#D32F2F] font-semibold hover:underline">
                   Fazer Login
@@ -360,19 +367,19 @@ export default function ProdutoPage() {
               ) : (
                 reviews.map((rev) => (
                   <div key={rev.id} className="border-b pb-6 last:border-b-0 last:pb-0">
-                    <div className="flex items-center gap-2 mb-2">
-                      <div className="w-10 h-10 bg-red-100 text-red-600 rounded-full flex items-center justify-center font-bold text-lg">
+                    <div className="flex items-center gap-3 mb-2">
+                      <div className="w-10 h-10 bg-red-100 text-red-600 rounded-full flex items-center justify-center font-bold text-base shrink-0">
                         {rev.user_name.charAt(0).toUpperCase()}
                       </div>
                       <div>
-                        <span className="font-semibold block">{rev.user_name}</span>
-                        <span className="text-yellow-500 text-sm">
+                        <span className="font-semibold text-gray-800 block text-sm sm:text-base">{rev.user_name}</span>
+                        <span className="text-yellow-500 text-xs sm:text-sm">
                           {"★".repeat(rev.rating)}{"☆".repeat(5 - rev.rating)}
                         </span>
                       </div>
                     </div>
-                    <p className="text-gray-700 ml-12">{rev.comment}</p>
-                    <span className="text-xs text-gray-400 ml-12 mt-2 block">
+                    <p className="text-gray-700 text-sm sm:text-base pl-0 sm:pl-13 mt-2">{rev.comment}</p>
+                    <span className="text-xs text-gray-400 pl-0 sm:pl-13 mt-1.5 block">
                       {new Date(rev.created_at).toLocaleDateString("pt-BR")}
                     </span>
                   </div>

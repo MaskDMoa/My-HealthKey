@@ -33,17 +33,17 @@ export default async function DashboardLayout({
     <div className="flex h-screen bg-[#F8F9FA] overflow-hidden selection:bg-red-100 selection:text-red-900">
       <Sidebar pharmacyId={pharmacy.id} />
       <main className="flex-1 overflow-y-auto flex flex-col relative">
-        <header className="h-20 bg-white/80 backdrop-blur-md border-b border-gray-100 flex items-center px-8 sticky top-0 z-10">
+        <header className="h-16 sm:h-20 bg-white/80 backdrop-blur-md border-b border-gray-100 flex items-center px-4 sm:px-8 sticky top-0 z-10 pr-16 md:pr-8">
           <div>
-            <h1 className="text-xl font-bold text-gray-800">
+            <h1 className="text-lg sm:text-xl font-bold text-gray-800 truncate max-w-[240px] sm:max-w-none">
               Olá, {pharmacy.name}
             </h1>
-            <p className="text-sm text-gray-500">
+            <p className="text-xs sm:text-sm text-gray-500 hidden sm:block">
               Gerencie seu estoque e visualize suas estatísticas
             </p>
           </div>
         </header>
-        <div className="p-8 flex-1 max-w-7xl mx-auto w-full">
+        <div className="p-4 sm:p-8 flex-1 max-w-7xl mx-auto w-full">
           {children}
         </div>
       </main>

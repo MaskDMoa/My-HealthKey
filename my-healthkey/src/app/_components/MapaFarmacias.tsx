@@ -88,6 +88,11 @@ export default function MapaFarmacias({ medicamentoId, nomeMedicamento, onSelect
   const mapRef = useRef<L.Map | null>(null);
   const markerRefs = useRef<Record<string, L.Marker | null>>({});
 
+  const onSelectPharmacyRef = useRef(onSelectPharmacy);
+  useEffect(() => {
+    onSelectPharmacyRef.current = onSelectPharmacy;
+  });
+
   // 1. Localização do usuário
   useEffect(() => {
     if (!navigator.geolocation) {
@@ -157,7 +162,7 @@ export default function MapaFarmacias({ medicamentoId, nomeMedicamento, onSelect
         if (comDistancia.length > 0) {
           const cheapest = [...comDistancia].sort((a, b) => a.preco - b.preco)[0];
           setActiveId(cheapest.id);
-          if (onSelectPharmacy) onSelectPharmacy(cheapest);
+          if (onSelectPharmacyRef.current) onSelectPharmacyRef.current(cheapest);
         }
 
       } catch {
@@ -166,7 +171,7 @@ export default function MapaFarmacias({ medicamentoId, nomeMedicamento, onSelect
     }
 
     fetchFarmacias();
-  }, [origin, medicamentoId, onSelectPharmacy]);
+  }, [origin, medicamentoId]);
 
   if (!origin) {
     return <div className="text-sm text-neutral-500 py-6 text-center">{locationLabel}</div>;
@@ -194,37 +199,37 @@ export default function MapaFarmacias({ medicamentoId, nomeMedicamento, onSelect
   }
 
   return (
-    <div className="rounded-2xl bg-white p-6 shadow-sm">
-      <div className="flex items-center justify-between flex-wrap gap-2 mb-1">
-        <h3 className="text-lg font-bold flex items-center gap-2">
+    <div className="rounded-2xl bg-white p-3.5 sm:p-6 shadow-sm border border-gray-100">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 mb-2">
+        <h3 className="text-base sm:text-lg font-bold flex items-center gap-2">
           📍 Farmácias com {nomeMedicamento} perto de você
         </h3>
-        <div className="flex gap-1 bg-neutral-100 rounded-lg p-1">
+        <div className="flex gap-1 bg-neutral-100 rounded-lg p-1 self-start sm:self-auto">
           <button
             onClick={() => setSortMode("price")}
-            className={`text-xs font-semibold px-3 py-1.5 rounded-md ${
-              sortMode === "price" ? "bg-white shadow-sm" : "text-neutral-500"
+            className={`text-xs font-semibold px-3 py-1.5 rounded-md transition-colors ${
+              sortMode === "price" ? "bg-white shadow-xs text-gray-900" : "text-neutral-500"
             }`}
           >
             Menor preço
           </button>
           <button
             onClick={() => setSortMode("distance")}
-            className={`text-xs font-semibold px-3 py-1.5 rounded-md ${
-              sortMode === "distance" ? "bg-white shadow-sm" : "text-neutral-500"
+            className={`text-xs font-semibold px-3 py-1.5 rounded-md transition-colors ${
+              sortMode === "distance" ? "bg-white shadow-xs text-gray-900" : "text-neutral-500"
             }`}
           >
             Mais perto
           </button>
         </div>
       </div>
-      <p className="text-xs text-neutral-500 mb-4">{locationLabel}</p>
+      <p className="text-xs text-neutral-500 mb-3">{locationLabel}</p>
 
       <div className="relative isolate z-0">
         <MapContainer
           center={[origin.lat, origin.lng]}
           zoom={14}
-          style={{ height: "260px", width: "100%", borderRadius: "12px" }}
+          style={{ height: "240px", width: "100%", borderRadius: "12px" }}
           scrollWheelZoom={false}
         >
           <MapRefSetter mapRef={mapRef} />
@@ -279,7 +284,7 @@ export default function MapaFarmacias({ medicamentoId, nomeMedicamento, onSelect
 
       {status === "ok" && (
         <div className="relative">
-          <div className="flex flex-col gap-2.5 mt-4 max-h-[400px] overflow-y-auto pr-1">
+          <div className="flex flex-col gap-2 mt-4 max-h-[380px] overflow-y-auto pr-1">
             {sorted.map((f, i) => {
               const isBest = f.id === bestId;
               const savings = maxPrice - f.preco;
@@ -287,24 +292,26 @@ export default function MapaFarmacias({ medicamentoId, nomeMedicamento, onSelect
                 <div
                   key={f.id}
                   onClick={() => focarFarmacia(f)}
-                  className={`relative flex items-center gap-3.5 p-3.5 border rounded-xl cursor-pointer transition-colors ${
-                    activeId === f.id ? "border-red-400 bg-red-50" : "border-neutral-200"
+                  className={`relative flex items-center justify-between gap-2.5 sm:gap-3.5 p-2.5 sm:p-3.5 border rounded-xl cursor-pointer transition-colors ${
+                    activeId === f.id ? "border-red-400 bg-red-50" : "border-neutral-200 hover:border-gray-300"
                   }`}
                 >
                   {isBest && (
-                    <span className="absolute -top-2 left-3.5 bg-emerald-600 text-white text-[9.5px] font-bold px-2 py-0.5 rounded-full">
+                    <span className="absolute -top-2 left-3 bg-emerald-600 text-white text-[9px] font-bold px-2 py-0.5 rounded-full shadow-xs">
                       MELHOR PREÇO
                     </span>
                   )}
-                  <span className="text-sm text-neutral-400 w-4">{i + 1}</span>
-                  <div className="flex-1 min-w-0">
-                    <div className="font-bold text-sm truncate">{f.nome}</div>
-                    <div className="text-xs text-neutral-500 mt-0.5">📍 {formatDistance(f.distancia)}</div>
+                  <div className="flex items-center gap-2 min-w-0 flex-1">
+                    <span className="text-xs sm:text-sm text-neutral-400 w-4 shrink-0">{i + 1}</span>
+                    <div className="min-w-0 flex-1">
+                      <div className="font-bold text-xs sm:text-sm truncate">{f.nome}</div>
+                      <div className="text-[11px] sm:text-xs text-neutral-500 mt-0.5">📍 {formatDistance(f.distancia)}</div>
+                    </div>
                   </div>
-                  <div className="text-right flex-shrink-0">
-                    <div className="text-lg font-bold text-red-500">R$ {f.preco.toFixed(2)}</div>
+                  <div className="text-right shrink-0">
+                    <div className="text-base sm:text-lg font-bold text-red-500">R$ {f.preco.toFixed(2)}</div>
                     {savings > 0 && (
-                      <div className="text-[10.5px] text-emerald-600 font-semibold">
+                      <div className="text-[10px] sm:text-[10.5px] text-emerald-600 font-semibold">
                         economize R$ {savings.toFixed(2)}
                       </div>
                     )}

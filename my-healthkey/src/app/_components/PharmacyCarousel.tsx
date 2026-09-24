@@ -16,16 +16,16 @@ function PrevButton({ enabled, onClick }: ButtonProps) {
     <button
       onClick={onClick}
       disabled={!enabled}
-      className="absolute left-4 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white rounded-full p-2 z-10 transition-all disabled:opacity-50"
-      style={{ width: "40px", height: "40px" }}
+      aria-label="Anterior"
+      className="hidden sm:flex absolute left-2 sm:left-4 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white rounded-full p-2 z-10 transition-all disabled:opacity-30 items-center justify-center w-9 h-9 sm:w-10 sm:h-10"
     >
       <svg
-        width="24"
-        height="24"
+        width="20"
+        height="20"
         viewBox="0 0 24 24"
         fill="none"
         stroke="currentColor"
-        strokeWidth="2"
+        strokeWidth="2.5"
       >
         <path d="M15 18l-6-6 6-6" />
       </svg>
@@ -38,16 +38,16 @@ function NextButton({ enabled, onClick }: ButtonProps) {
     <button
       onClick={onClick}
       disabled={!enabled}
-      className="absolute right-4 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white rounded-full p-2 z-10 transition-all disabled:opacity-50"
-      style={{ width: "40px", height: "40px" }}
+      aria-label="Próximo"
+      className="hidden sm:flex absolute right-2 sm:right-4 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white rounded-full p-2 z-10 transition-all disabled:opacity-30 items-center justify-center w-9 h-9 sm:w-10 sm:h-10"
     >
       <svg
-        width="24"
-        height="24"
+        width="20"
+        height="20"
         viewBox="0 0 24 24"
         fill="none"
         stroke="currentColor"
-        strokeWidth="2"
+        strokeWidth="2.5"
       >
         <path d="M9 18l6-6-6-6" />
       </svg>
@@ -55,8 +55,18 @@ function NextButton({ enabled, onClick }: ButtonProps) {
   );
 }
 
-export function PharmacyCarousel({ pharmacyId, pharmacyName }: { pharmacyId: string; pharmacyName: string }) {
-  const [emblaRef, emblaApi] = useEmblaCarousel({ loop: true, duration: 30 });
+export function PharmacyCarousel({
+  pharmacyId,
+  pharmacyName,
+}: {
+  pharmacyId: string;
+  pharmacyName: string;
+}) {
+  const [emblaRef, emblaApi] = useEmblaCarousel({
+    loop: false,
+    align: "start",
+    slidesToScroll: "auto",
+  });
   const [prevBtnEnabled, setPrevBtnEnabled] = useState(false);
   const [nextBtnEnabled, setNextBtnEnabled] = useState(false);
   const [medicines, setMedicines] = useState<any[]>([]);
@@ -100,45 +110,63 @@ export function PharmacyCarousel({ pharmacyId, pharmacyName }: { pharmacyId: str
     emblaApi.on("select", onSelect);
   }, [emblaApi, onSelect]);
 
-  if (medicines.length === 0) return null; // Não renderiza o carrossel se a farmácia não tiver produtos cadastrados/disponíveis
+  if (medicines.length === 0) return null;
 
   return (
-    <div className="relative group mt-6">
-      <div className="ml-16 mt-4 mb-2">
-        <h1 className="text-3xl font-bold text-gray-800 font-mono">{pharmacyName}</h1>
+    <div className="relative group max-w-7xl mx-auto px-4 sm:px-8 mt-8">
+      <div className="mb-4 flex items-center justify-between">
+        <h2 className="text-xl sm:text-2xl font-bold text-gray-800 tracking-tight">
+          {pharmacyName}
+        </h2>
+        <Link
+          href={`/farmacia/${pharmacyId}`}
+          className="text-xs sm:text-sm font-semibold text-red-600 hover:text-red-700 transition-colors"
+        >
+          Ver catálogo completo →
+        </Link>
       </div>
-      <div className="overflow-hidden rounded-xl mx-16" ref={emblaRef}>
-        <div className="flex">
-          {medicines.map((item, idx) => (
-            <div
-              key={item.medicines.id + idx}
-              className="flex-[0_0_100%] sm:flex-[0_0_50%] md:flex-[0_0_20%] min-w-0 px-2"
-            >
-              <Link href={`/produto/${item.medicines.id}`}>
-                <div className="bg-white rounded-2xl p-6 h-auto min-h-[14rem] w-full flex flex-col sm:flex-row items-center justify-center gap-4 shadow-sm hover:shadow-md transition-shadow cursor-pointer border border-transparent hover:border-[#D32F2F]">
-                  <div className="shrink-0 w-24 h-24 relative">
-                    <Image
-                      src={item.medicines.image_url || "/Paracetamol.png"}
-                      alt={item.medicines.name}
-                      fill
-                      className="object-contain"
-                    />
+
+      <div className="overflow-hidden rounded-2xl" ref={emblaRef}>
+        <div className="flex -ml-3">
+          {medicines.map((item, idx) => {
+            const med = item.medicines;
+            if (!med) return null;
+            return (
+              <div
+                key={med.id || idx}
+                className="flex-[0_0_80%] sm:flex-[0_0_46%] md:flex-[0_0_31%] lg:flex-[0_0_23%] min-w-0 pl-3"
+              >
+                <Link href={`/produto/${med.id}`}>
+                  <div className="bg-white rounded-2xl p-4 sm:p-5 h-full flex flex-col justify-between shadow-sm hover:shadow-md transition-all duration-300 cursor-pointer border border-gray-100 hover:border-red-300">
+                    <div className="w-full h-28 relative mb-3">
+                      <Image
+                        src={med.image_url || "/Paracetamol.png"}
+                        alt={med.name}
+                        fill
+                        className="object-contain"
+                      />
+                    </div>
+                    <div className="text-black flex-1 flex flex-col justify-between text-left">
+                      <div>
+                        <h3 className="text-sm sm:text-base font-bold text-gray-900 line-clamp-2 leading-snug">
+                          {med.name}
+                        </h3>
+                        <p className="text-xs text-gray-500 mt-1 line-clamp-2">
+                          {med.description || "Disponível nesta farmácia"}
+                        </p>
+                      </div>
+                      <div className="mt-3 pt-2 border-t border-gray-100 flex items-baseline justify-between">
+                        <span className="text-xs text-gray-400 font-medium">Por</span>
+                        <span className="text-base sm:text-lg font-bold text-[#D32F2F]">
+                          R$ {Number(item.price).toFixed(2).replace('.', ',')}
+                        </span>
+                      </div>
+                    </div>
                   </div>
-                  <div className="text-black flex-1 flex flex-col justify-center text-center sm:text-left">
-                    <h3 className="text-base font-bold font-mono text-gray-900 line-clamp-2">
-                      {item.medicines.name}
-                    </h3>
-                    <p className="text-xs font-mono text-gray-500 mt-1 leading-tight line-clamp-3">
-                      {item.medicines.description || "Sem descrição"}
-                    </p>
-                    <span className="text-lg font-bold font-mono text-[#D32F2F] mt-2 block">
-                      R$ {Number(item.price).toFixed(2)}
-                    </span>
-                  </div>
-                </div>
-              </Link>
-            </div>
-          ))}
+                </Link>
+              </div>
+            );
+          })}
         </div>
       </div>
 
