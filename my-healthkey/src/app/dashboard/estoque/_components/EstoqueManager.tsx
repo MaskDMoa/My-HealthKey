@@ -53,6 +53,7 @@ export function EstoqueManager({ initialStock, pharmacyId }: { initialStock: any
 
   const handleAddStock = async () => {
     if (!price) return alert("Preço é obrigatório");
+    if (parseFloat(price) <= 0) return alert("O preço deve ser maior que zero");
     
     let medId = selectedMedicine?.id;
 
@@ -351,8 +352,15 @@ export function EstoqueManager({ initialStock, pharmacyId }: { initialStock: any
                   <input 
                     type="number" 
                     step="0.01"
+                    min="0"
                     value={price}
-                    onChange={e => setPrice(e.target.value)}
+                    onChange={e => {
+                      const val = e.target.value;
+                      if (val === '' || parseFloat(val) >= 0) setPrice(val);
+                    }}
+                    onKeyDown={e => {
+                      if (e.key === '-' || e.key === 'e') e.preventDefault();
+                    }}
                     className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-red-500 outline-none text-gray-800"
                     placeholder="0.00"
                   />

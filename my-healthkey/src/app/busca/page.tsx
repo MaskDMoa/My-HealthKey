@@ -20,7 +20,6 @@ interface OfferResult {
   active_ingredient: string;
   pharmacy_name: string;
   price: number;
-  pharmacy_id?: string;
 }
 
 function BuscaContent() {
@@ -89,7 +88,7 @@ function BuscaContent() {
           const { data: offersData } = await supabase
             .from("pharmacy_medicines")
             .select(`
-              id, price, medicine_id, pharmacy_id,
+              id, price, medicine_id,
               medicines (name, active_ingredient),
               pharmacies (name)
             `)
@@ -102,8 +101,7 @@ function BuscaContent() {
             name: o.medicines?.name || "",
             active_ingredient: o.medicines?.active_ingredient || "",
             pharmacy_name: o.pharmacies?.name || "",
-            price: Number(o.price),
-            pharmacy_id: o.pharmacy_id
+            price: Number(o.price)
           }));
 
           // Ordenar
@@ -211,8 +209,8 @@ function BuscaContent() {
         <section className="container mx-auto px-4 sm:px-6 max-w-6xl py-4 sm:py-6 animate-in slide-in-from-top-4 fade-in duration-300">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 sm:gap-6">
             
-            {/* Tags de Categoria (Agem como filtros de busca rápida deslizáveis no mobile) */}
-            <div className="flex items-center gap-1.5 sm:gap-2 overflow-x-auto no-scrollbar flex-nowrap sm:flex-wrap pb-1.5 sm:pb-0 -mx-4 px-4 sm:mx-0 sm:px-0 flex-1">
+            {/* Tags de Categoria (Agem como filtros de busca rápida) */}
+            <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap flex-1">
               {tagsDinamicas.map((cat) => {
                 const isActive = cat === "Todos" ? termoSubmit === "" : termoSubmit.toLowerCase() === cat.toLowerCase();
                 return (
@@ -223,7 +221,7 @@ function BuscaContent() {
                       setTermo(newTerm);
                       setTermoSubmit(newTerm);
                     }}
-                    className={`text-xs sm:text-sm px-3.5 sm:px-5 py-1.5 sm:py-2 rounded-full border font-medium transition-all duration-200 hover:shadow-md shrink-0 whitespace-nowrap ${
+                    className={`text-xs sm:text-sm px-3.5 sm:px-5 py-1.5 sm:py-2 rounded-full border font-medium transition-all duration-200 hover:shadow-md ${
                       isActive
                         ? "bg-red-600 border-red-600 text-white shadow-red-200 shadow-sm"
                         : "bg-white border-gray-200 text-gray-600 hover:border-red-300 hover:text-red-600"
@@ -316,7 +314,7 @@ function BuscaContent() {
                 ) : (
                   <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
                     {remedios.map((med) => (
-                      <Link key={med.id} href={`/produto/${med.medicine_id}?farmacia=${med.pharmacy_id || ""}`}>
+                      <Link key={med.id} href={`/produto/${med.medicine_id}`}>
                         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 hover:shadow-xl transition-all duration-300 cursor-pointer p-5 hover:scale-[1.03] h-full flex flex-col group">
                           <div className="w-12 h-12 bg-red-50 rounded-xl flex items-center justify-center mb-4 group-hover:bg-red-100 transition-colors">
                             <Pill size={24} className="text-red-500" weight="fill" />

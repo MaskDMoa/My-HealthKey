@@ -31,6 +31,7 @@ export function Header() {
   const [scrolled, setScrolled] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const authSheetRef = useRef<HTMLDivElement>(null);
+  const authTriggerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     supabase.auth.getUser().then(async ({ data }) => {
@@ -75,7 +76,10 @@ export function Header() {
       if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
         setMenuOpen(false);
       }
-      if (authSheetRef.current && !authSheetRef.current.contains(e.target as Node)) {
+      if (
+        authSheetRef.current && !authSheetRef.current.contains(e.target as Node) &&
+        authTriggerRef.current && !authTriggerRef.current.contains(e.target as Node)
+      ) {
         setMobileAuthOpen(false);
       }
     }
@@ -112,11 +116,10 @@ export function Header() {
   return (
     <>
       <header
-        className={`sticky top-0 z-50 w-full transition-all duration-500 ${
-          scrolled
-            ? "bg-white/95 backdrop-blur-xl shadow-[0_4px_30px_rgba(0,0,0,0.08)] border-b border-gray-200/50"
-            : "bg-[#F8F9FA] shadow-sm"
-        }`}
+        className={`sticky top-0 z-50 w-full transition-all duration-500 ${scrolled
+          ? "bg-white/95 backdrop-blur-xl shadow-[0_4px_30px_rgba(0,0,0,0.08)] border-b border-gray-200/50"
+          : "bg-[#F8F9FA] shadow-sm"
+          }`}
       >
         <div className="max-w-[1800px] mx-auto h-16 sm:h-20 px-3 sm:px-6 lg:px-12 flex items-center gap-2 sm:gap-4 md:gap-6">
           {/* Logo */}
@@ -190,11 +193,10 @@ export function Header() {
                 <div ref={menuRef} className="relative">
                   <button
                     onClick={() => setMenuOpen(!menuOpen)}
-                    className={`w-9 h-9 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center font-bold text-white text-xs sm:text-sm transition-all duration-300 hover:scale-105 hover:shadow-lg active:scale-95 ${
-                      pharmacyName
-                        ? "bg-gradient-to-br from-green-600 to-green-700 hover:shadow-green-200"
-                        : "bg-gradient-to-br from-red-600 to-red-500 hover:shadow-red-200"
-                    }`}
+                    className={`w-9 h-9 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center font-bold text-white text-xs sm:text-sm transition-all duration-300 hover:scale-105 hover:shadow-lg active:scale-95 ${pharmacyName
+                      ? "bg-gradient-to-br from-green-600 to-green-700 hover:shadow-green-200"
+                      : "bg-gradient-to-br from-red-600 to-red-500 hover:shadow-red-200"
+                      }`}
                     title="Minha conta"
                   >
                     {pharmacyName
@@ -285,7 +287,7 @@ export function Header() {
                 </div>
 
                 {/* Mobile: Botão de Conta elegante e compacto */}
-                <div className="md:hidden" ref={authSheetRef}>
+                <div className="md:hidden" ref={authTriggerRef}>
                   <button
                     onClick={() => setMobileAuthOpen(!mobileAuthOpen)}
                     className="flex items-center gap-1.5 p-2 rounded-xl text-gray-700 hover:text-red-600 bg-gray-100 hover:bg-red-50 transition-colors active:scale-95"
@@ -310,7 +312,7 @@ export function Header() {
           />
 
           {/* Painel inferior (Bottom Sheet) */}
-          <div className="relative bg-white rounded-t-3xl shadow-2xl p-6 z-10 space-y-5 animate-in slide-in-from-bottom duration-300 border-t border-gray-100">
+          <div ref={authSheetRef} className="relative bg-white rounded-t-3xl shadow-2xl p-6 z-10 space-y-5 animate-in slide-in-from-bottom duration-300 border-t border-gray-100">
             <div className="flex items-center justify-between border-b border-gray-100 pb-3">
               <div className="flex items-center gap-2">
                 <div className="w-8 h-8 rounded-full bg-red-100 text-red-600 flex items-center justify-center">
