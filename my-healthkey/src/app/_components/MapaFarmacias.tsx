@@ -21,6 +21,7 @@ interface FarmaciaComDistancia extends Farmacia {
 interface MapaFarmaciasProps {
   medicamentoId: string;
   nomeMedicamento: string;
+  selectedPharmacyId?: string | null;
   onSelectPharmacy?: (f: Farmacia) => void;
 }
 
@@ -78,7 +79,7 @@ function MapRefSetter({ mapRef }: { mapRef: React.MutableRefObject<L.Map | null>
   return null;
 }
 
-export default function MapaFarmacias({ medicamentoId, nomeMedicamento, onSelectPharmacy }: MapaFarmaciasProps) {
+export default function MapaFarmacias({ medicamentoId, nomeMedicamento, selectedPharmacyId, onSelectPharmacy }: MapaFarmaciasProps) {
   const [origin, setOrigin] = useState<{ lat: number; lng: number } | null>(null);
   const [locationLabel, setLocationLabel] = useState("Localizando você…");
   const [pharmacies, setPharmacies] = useState<FarmaciaComDistancia[]>([]);
@@ -158,11 +159,12 @@ export default function MapaFarmacias({ medicamentoId, nomeMedicamento, onSelect
         setPharmacies(comDistancia);
         setStatus(comDistancia.length === 0 ? "empty" : "ok");
 
-        // Auto-selecionar a mais barata
+        // Preserva a farmácia de origem; sem ela, seleciona a oferta mais barata.
         if (comDistancia.length > 0) {
           const cheapest = [...comDistancia].sort((a, b) => a.preco - b.preco)[0];
-          setActiveId(cheapest.id);
-          if (onSelectPharmacyRef.current) onSelectPharmacyRef.current(cheapest);
+          const selected = comDistancia.find((farmacia) => farmacia.id === selectedPharmacyId) ?? cheapest;
+          setActiveId(selected.id);
+          if (onSelectPharmacyRef.current) onSelectPharmacyRef.current(selected);
         }
 
       } catch {
@@ -171,7 +173,7 @@ export default function MapaFarmacias({ medicamentoId, nomeMedicamento, onSelect
     }
 
     fetchFarmacias();
-  }, [origin, medicamentoId]);
+  }, [origin, medicamentoId, selectedPharmacyId]);
 
   if (!origin) {
     return <div className="text-sm text-neutral-500 py-6 text-center">{locationLabel}</div>;
@@ -283,46 +285,41 @@ export default function MapaFarmacias({ medicamentoId, nomeMedicamento, onSelect
       )}
 
       {status === "ok" && (
-        <div className="relative">
-          <div className="flex flex-col gap-2 mt-4 max-h-[380px] overflow-y-auto pr-1">
-            {sorted.map((f, i) => {
-              const isBest = f.id === bestId;
-              const savings = maxPrice - f.preco;
-              return (
-                <div
-                  key={f.id}
-                  onClick={() => focarFarmacia(f)}
-                  className={`relative flex items-center justify-between gap-2.5 sm:gap-3.5 p-2.5 sm:p-3.5 border rounded-xl cursor-pointer transition-colors ${
-                    activeId === f.id ? "border-red-400 bg-red-50" : "border-neutral-200 hover:border-gray-300"
-                  }`}
-                >
-                  {isBest && (
-                    <span className="absolute -top-2 left-3 bg-emerald-600 text-white text-[9px] font-bold px-2 py-0.5 rounded-full shadow-xs">
-                      MELHOR PREÇO
-                    </span>
-                  )}
-                  <div className="flex items-center gap-2 min-w-0 flex-1">
-                    <span className="text-xs sm:text-sm text-neutral-400 w-4 shrink-0">{i + 1}</span>
-                    <div className="min-w-0 flex-1">
-                      <div className="font-bold text-xs sm:text-sm truncate">{f.nome}</div>
-                      <div className="text-[11px] sm:text-xs text-neutral-500 mt-0.5">📍 {formatDistance(f.distancia)}</div>
-                    </div>
-                  </div>
-                  <div className="text-right shrink-0">
-                    <div className="text-base sm:text-lg font-bold text-red-500">R$ {f.preco.toFixed(2)}</div>
-                    {savings > 0 && (
-                      <div className="text-[10px] sm:text-[10.5px] text-emerald-600 font-semibold">
-                        economize R$ {savings.toFixed(2)}
-                      </div>
-                    )}
+        <div className="flex flex-col gap-2 mt-4">
+          {sorted.map((f, i) => {
+            const isBest = f.id === bestId;
+            const savings = maxPrice - f.preco;
+            return (
+              <div
+                key={f.id}
+                onClick={() => focarFarmacia(f)}
+                className={`relative flex items-center justify-between gap-2.5 sm:gap-3.5 p-2.5 sm:p-3.5 border rounded-xl cursor-pointer transition-colors ${
+                  activeId === f.id ? "border-red-400 bg-red-50" : "border-neutral-200 hover:border-gray-300"
+                }`}
+              >
+                {isBest && (
+                  <span className="absolute -top-2 left-3 bg-emerald-600 text-white text-[9px] font-bold px-2 py-0.5 rounded-full shadow-xs">
+                    MELHOR PREÇO
+                  </span>
+                )}
+                <div className="flex items-center gap-2 min-w-0 flex-1">
+                  <span className="text-xs sm:text-sm text-neutral-400 w-4 shrink-0">{i + 1}</span>
+                  <div className="min-w-0 flex-1">
+                    <div className="font-bold text-xs sm:text-sm truncate">{f.nome}</div>
+                    <div className="text-[11px] sm:text-xs text-neutral-500 mt-0.5">📍 {formatDistance(f.distancia)}</div>
                   </div>
                 </div>
-              );
-            })}
-          </div>
-          {sorted.length > 5 && (
-            <div className="pointer-events-none absolute bottom-0 left-0 right-1 h-8 bg-gradient-to-t from-white to-transparent rounded-b-xl" />
-          )}
+                <div className="text-right shrink-0">
+                  <div className="text-base sm:text-lg font-bold text-red-500">R$ {f.preco.toFixed(2)}</div>
+                  {savings > 0 && (
+                    <div className="text-[10px] sm:text-[10.5px] text-emerald-600 font-semibold">
+                      economize R$ {savings.toFixed(2)}
+                    </div>
+                  )}
+                </div>
+              </div>
+            );
+          })}
         </div>
       )}
     </div>

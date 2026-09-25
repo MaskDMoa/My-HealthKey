@@ -7,7 +7,7 @@ import { Footer } from "./_components/footer";
 
 export default function Home() {
   return (
-    <main className="w-full overflow-x-hidden min-h-screen bg-[#F8F9FA]">
+    <main className="w-full overflow-x-clip min-h-screen bg-[#F8F9FA]">
       <Header />
       <Hero />
       <HeroCarousel />

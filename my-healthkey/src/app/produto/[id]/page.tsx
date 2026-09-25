@@ -1,9 +1,9 @@
 "use client";
 
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import dynamic from "next/dynamic";
 import { Button } from "@/components/ui/button";
 import { Header } from "@/./app/_components/header";
@@ -19,8 +19,9 @@ const MapaFarmacias = dynamic(() => import("@/./app/_components/MapaFarmacias"),
   ),
 });
 
-export default function ProdutoPage() {
+function ProdutoContent() {
   const params = useParams<{ id: string }>();
+  const searchParams = useSearchParams();
   const router = useRouter();
   const [quantidade, setQuantidade] = useState(1);
   const [produto, setProduto] = useState<any>(null);
@@ -96,10 +97,31 @@ export default function ProdutoPage() {
         avaliacao: calcAvg(),
         totalAvaliacoes: reviewsData?.length || 0
       });
+
+      const farmaciaQueryId = searchParams.get("farmacia");
+      if (farmaciaQueryId) {
+        const { data: farmData } = await supabase
+          .from("pharmacy_medicines")
+          .select("price, pharmacies(id, name)")
+          .eq("medicine_id", data.id)
+          .eq("pharmacy_id", farmaciaQueryId)
+          .single();
+        const farmacia = Array.isArray(farmData?.pharmacies)
+          ? farmData.pharmacies[0]
+          : farmData?.pharmacies;
+        if (farmacia) {
+          setFarmaciaSelecionada({
+            id: farmacia.id,
+            nome: farmacia.name,
+            preco: farmData?.price ?? 0
+          });
+        }
+      }
+
       setLoading(false);
     }
     fetchProdutoEReviews();
-  }, [params.id]);
+  }, [params.id, searchParams]);
 
   const handleSubmitReview = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -306,6 +328,7 @@ export default function ProdutoPage() {
             <MapaFarmacias
               medicamentoId={produto.id.toString()}
               nomeMedicamento={produto.nome}
+              selectedPharmacyId={searchParams.get("farmacia")}
               onSelectPharmacy={(f) => setFarmaciaSelecionada(f)}
             />
           </div>
@@ -393,5 +416,13 @@ export default function ProdutoPage() {
       {/* ⬇️ FOOTER NO RODAPÉ */}
       <Footer />
     </>
+  );
+}
+
+export default function ProdutoPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center text-gray-500">Carregando...</div>}>
+      <ProdutoContent />
+    </Suspense>
   );
 }

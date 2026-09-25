@@ -43,7 +43,7 @@ export default function RootLayout({
         <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
         <link rel="manifest" href="/site.webmanifest" />
       </head>
-      <body className="min-h-full flex flex-col w-full max-w-full overflow-x-hidden bg-[#F8F9FA]">{children}</body>
+      <body className="min-h-full flex flex-col w-full max-w-full overflow-x-clip bg-[#F8F9FA]">{children}</body>
     </html>
   );
 }

@@ -212,7 +212,7 @@ export function FarmaciaDetail({ pharmacy, stock, initialReviews = [] }: { pharm
                     return (
                       <Link
                         key={item.id}
-                        href={`/produto/${med.id}`}
+                        href={`/produto/${med.id}?farmacia=${pharmacy.id}`}
                         className="p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-2 hover:bg-red-50/40 transition-colors group block"
                       >
                         <div className="flex-1 min-w-0">

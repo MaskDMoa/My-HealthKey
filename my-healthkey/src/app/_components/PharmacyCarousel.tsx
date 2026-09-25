@@ -136,7 +136,7 @@ export function PharmacyCarousel({
                 key={med.id || idx}
                 className="flex-[0_0_80%] sm:flex-[0_0_46%] md:flex-[0_0_31%] lg:flex-[0_0_23%] min-w-0 pl-3"
               >
-                <Link href={`/produto/${med.id}`}>
+                <Link href={`/produto/${med.id}?farmacia=${pharmacyId}`}>
                   <div className="bg-white rounded-2xl p-4 sm:p-5 h-full flex flex-col justify-between shadow-sm hover:shadow-md transition-all duration-300 cursor-pointer border border-gray-100 hover:border-red-300">
                     <div className="w-full h-28 relative mb-3">
                       <Image

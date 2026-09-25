@@ -20,6 +20,7 @@ interface OfferResult {
   active_ingredient: string;
   pharmacy_name: string;
   price: number;
+  pharmacy_id?: string;
 }
 
 function BuscaContent() {
@@ -88,7 +89,7 @@ function BuscaContent() {
           const { data: offersData } = await supabase
             .from("pharmacy_medicines")
             .select(`
-              id, price, medicine_id,
+              id, price, medicine_id, pharmacy_id,
               medicines (name, active_ingredient),
               pharmacies (name)
             `)
@@ -101,7 +102,8 @@ function BuscaContent() {
             name: o.medicines?.name || "",
             active_ingredient: o.medicines?.active_ingredient || "",
             pharmacy_name: o.pharmacies?.name || "",
-            price: Number(o.price)
+            price: Number(o.price),
+            pharmacy_id: o.pharmacy_id
           }));
 
           // Ordenar
@@ -314,7 +316,7 @@ function BuscaContent() {
                 ) : (
                   <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
                     {remedios.map((med) => (
-                      <Link key={med.id} href={`/produto/${med.medicine_id}`}>
+                      <Link key={med.id} href={`/produto/${med.medicine_id}?farmacia=${med.pharmacy_id || ""}`}>
                         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 hover:shadow-xl transition-all duration-300 cursor-pointer p-5 hover:scale-[1.03] h-full flex flex-col group">
                           <div className="w-12 h-12 bg-red-50 rounded-xl flex items-center justify-center mb-4 group-hover:bg-red-100 transition-colors">
                             <Pill size={24} className="text-red-500" weight="fill" />
