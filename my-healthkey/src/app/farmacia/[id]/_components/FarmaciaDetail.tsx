@@ -125,7 +125,7 @@ export function FarmaciaDetail({ pharmacy, stock, initialReviews = [] }: { pharm
           <div className="lg:col-span-1 space-y-6">
             {/* Mapa */}
             <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-              <div className="h-64">
+              <div className="relative z-0 isolate h-64">
                 <FarmaciaMap lat={pharmacy.latitude} lng={pharmacy.longitude} name={pharmacy.name} />
               </div>
               <div className="p-5 space-y-3">
